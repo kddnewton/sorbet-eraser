@@ -29,6 +29,22 @@ module Sorbet
         OUTPUT
       end
 
+      def test_t_assert_type_parens
+        assert_erases(<<~INPUT, <<~OUTPUT)
+          foo = T.assert_type!(bar, String)
+        INPUT
+          foo =                bar         
+        OUTPUT
+      end
+
+      def test_t_cast_parens
+        assert_erases(<<~INPUT, <<~OUTPUT)
+          foo = T.cast(bar, String)
+        INPUT
+          foo =        bar         
+        OUTPUT
+      end
+
       def test_t_let_parens
         assert_erases(<<~INPUT, <<~OUTPUT)
           foo = T.let(bar, String)

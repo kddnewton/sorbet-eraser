@@ -36,10 +36,12 @@ module Sorbet
         end
       end
 
+      # T.assert_type!(foo, bar)
+      # T.cast(foo, bar)
       # T.let(foo, bar)
-      class TLetParensPattern < Pattern
+      class TTypeAssertionParensPattern < Pattern
         def replace(segment)
-          segment.gsub(/(T\s*\.let\(\s*)(.+)(\s*,.+\))(.*)/) do
+          segment.gsub(/(T\s*\.(?:assert_type!|cast|let)\(\s*)(.+)(\s*,.+\))(.*)/) do
             "#{" " * $1.length}#{$2}#{" " * $3.length}#{$4}"
           end
         end
@@ -52,10 +54,12 @@ module Sorbet
           patterns << TMustParensPattern.new(call.range.begin..arg_paren.range.end)
         end
 
+        # T.assert_type!(foo, bar)
+        # T.cast(foo, bar)
         # T.let(foo, bar)
-        if call.match?("<call <var_ref <@const T>> <@period .> <@ident let>>") &&
+        if call.match?(/<call <var_ref <@const T>> <@period .> <@ident (assert_type!|cast|let)>>/) &&
           arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
-          patterns << TLetParensPattern.new(call.range.begin..arg_paren.range.end)
+          patterns << TTypeAssertionParensPattern.new(call.range.begin..arg_paren.range.end)
         end
 
         super
