@@ -27,8 +27,18 @@ module Sorbet
         end
       end
 
-      # T.must(foo)
-      # T.reveal_type(foo)
+      # T.absurd(foo) => raise ::Sorbet::Eraser::AbsurdError
+      class TAbsurdParensPattern < Pattern
+        def replace(segment)
+          segment.gsub(/(T\s*\.absurd\(\s*.+\s*\))(.*)/) do
+            replacement = "raise ::Sorbet::Eraser::AbsurdError"
+            "#{replacement}#{" " * [$1.length - replacement.length, 0].max}#{$2}"
+          end
+        end
+      end
+
+      # T.must(foo) => foo
+      # T.reveal_type(foo) => foo
       class TOneArgMethodCallParensPattern < Pattern
         def replace(segment)
           segment.gsub(/(T\s*\.(?:must|reveal_type)\(\s*)(.+)(\s*\))(.*)/) do
@@ -37,10 +47,10 @@ module Sorbet
         end
       end
 
-      # T.assert_type!(foo, bar)
-      # T.bind(self, foo)
-      # T.cast(foo, bar)
-      # T.let(foo, bar)
+      # T.assert_type!(foo, bar) => foo
+      # T.bind(self, foo) => self
+      # T.cast(foo, bar) => foo
+      # T.let(foo, bar) => let
       class TTwoArgMethodCallParensPattern < Pattern
         def replace(segment)
           segment.gsub(/(T\s*\.(?:assert_type!|bind|cast|let)\(\s*)(.+)(\s*,.+\))(.*)/) do
@@ -50,6 +60,12 @@ module Sorbet
       end
 
       def on_method_add_arg(call, arg_paren)
+        # T.absurd(foo)
+        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident absurd>>/) &&
+          arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
+          patterns << TAbsurdParensPattern.new(call.range.begin..arg_paren.range.end)
+        end
+
         # T.must(foo)
         # T.reveal_type(foo)
         if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident (?:must|reveal_type)>>/) &&
@@ -74,11 +90,12 @@ module Sorbet
         super
       end
 
-      # T.type_alias { foo }
+      # T.type_alias { foo } => ::Sorbet::Eraser::TypeAlias
       class TTypeAliasBraceBlockPattern < Pattern
         def replace(segment)
-          segment.gsub(/T\s*\.type_alias\s*\{.*\}(.*)/) do
-            "::Sorbet::Eraser::TypeAlias#{$1}"
+          segment.gsub(/(T\s*\.type_alias\s*\{.*\})(.*)/) do
+            replacement = "::Sorbet::Eraser::TypeAlias"
+            "#{replacement}#{" " * [$1.length - replacement.length, 0].max}#{$2}"
           end
         end
       end
@@ -93,7 +110,7 @@ module Sorbet
         super
       end
 
-      # extend T::Sig
+      # extend T::Sig =>
       class ExtendTSigPattern < Pattern
         def replace(segment)
           segment.gsub(/(extend\s+T::Sig)(.*)/) do
@@ -112,7 +129,7 @@ module Sorbet
         super
       end
 
-      # T.must foo
+      # T.must foo => foo
       class TMustNoParensPattern < Pattern
         def replace(segment)
           segment.gsub(/(T\s*\.must\s*)(.+)/) do
@@ -134,7 +151,7 @@ module Sorbet
         super
       end
 
-      # sig { foo }
+      # sig { foo } =>
       class SigBracesPattern < Pattern
         def replace(segment)
           segment.gsub(/(sig\s*\{.+\})(.*)/) do

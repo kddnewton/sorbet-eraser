@@ -8,8 +8,11 @@ require "sorbet/eraser/version"
 
 module Sorbet
   module Eraser
-    # This is just a placeholder that gets put in place of any existing
-    # T.type_alias calls.
+    # This error gets raise in place of any T.absurd calls.
+    class AbsurdError < StandardError
+    end
+
+    # This class gets put in place of any existing T.type_alias calls.
     class TypeAlias
     end
 
