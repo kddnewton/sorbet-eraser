@@ -38,11 +38,12 @@ module Sorbet
       end
 
       # T.assert_type!(foo, bar)
+      # T.bind(self, foo)
       # T.cast(foo, bar)
       # T.let(foo, bar)
       class TTwoArgMethodCallParensPattern < Pattern
         def replace(segment)
-          segment.gsub(/(T\s*\.(?:assert_type!|cast|let)\(\s*)(.+)(\s*,.+\))(.*)/) do
+          segment.gsub(/(T\s*\.(?:assert_type!|bind|cast|let)\(\s*)(.+)(\s*,.+\))(.*)/) do
             "#{" " * $1.length}#{$2}#{" " * $3.length}#{$4}"
           end
         end
@@ -61,6 +62,12 @@ module Sorbet
         # T.let(foo, bar)
         if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident (?:assert_type!|cast|let)>>/) &&
           arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
+          patterns << TTwoArgMethodCallParensPattern.new(call.range.begin..arg_paren.range.end)
+        end
+
+        # T.bind(self, foo)
+        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident bind>>/) &&
+          arg_paren.match?(/<arg_paren <args_add_block <args <var_ref <@kw self>> .+> false>>/)
           patterns << TTwoArgMethodCallParensPattern.new(call.range.begin..arg_paren.range.end)
         end
 
