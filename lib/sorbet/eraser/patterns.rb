@@ -67,6 +67,25 @@ module Sorbet
         super
       end
 
+      # T.type_alias { foo }
+      class TTypeAliasBraceBlockPattern < Pattern
+        def replace(segment)
+          segment.gsub(/T\s*\.type_alias\s*\{.*\}(.*)/) do
+            "::Sorbet::Eraser::TypeAlias#{$1}"
+          end
+        end
+      end
+
+      def on_method_add_block(method_add_arg, block)
+        # T.type_alias { foo }
+        if method_add_arg.match?("<call <var_ref <@const T>> <@period .> <@ident type_alias>>") &&
+          block.match?(/<brace_block  <stmts .+>>/)
+          patterns << TTypeAliasBraceBlockPattern.new(method_add_arg.range.begin..block.range.end)
+        end
+
+        super
+      end
+
       # extend T::Sig
       class ExtendTSigPattern < Pattern
         def replace(segment)

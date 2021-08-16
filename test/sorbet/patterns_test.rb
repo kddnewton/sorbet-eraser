@@ -77,6 +77,14 @@ module Sorbet
         OUTPUT
       end
 
+      def test_t_type_alias
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          foo = T.type_alias { String }
+        INPUT
+          foo = ::Sorbet::Eraser::TypeAlias
+        OUTPUT
+      end
+
       private
 
       def assert_erases(input, output)

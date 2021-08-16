@@ -8,6 +8,11 @@ require "sorbet/eraser/version"
 
 module Sorbet
   module Eraser
+    # This is just a placeholder that gets put in place of any existing
+    # T.type_alias calls.
+    class TypeAlias
+    end
+
     # Hook the patterns into the parser so that the correct methods get
     # overridden and will trigger replacements.
     Parser.prepend(Patterns)
