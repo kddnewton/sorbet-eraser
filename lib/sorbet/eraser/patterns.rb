@@ -28,9 +28,10 @@ module Sorbet
       end
 
       # T.must(foo)
-      class TMustParensPattern < Pattern
+      # T.reveal_type(foo)
+      class TOneArgMethodCallParensPattern < Pattern
         def replace(segment)
-          segment.gsub(/(T\s*\.must\(\s*)(.+)(\s*\))(.*)/) do
+          segment.gsub(/(T\s*\.(?:must|reveal_type)\(\s*)(.+)(\s*\))(.*)/) do
             "#{" " * $1.length}#{$2}#{" " * $3.length}#{$4}"
           end
         end
@@ -39,7 +40,7 @@ module Sorbet
       # T.assert_type!(foo, bar)
       # T.cast(foo, bar)
       # T.let(foo, bar)
-      class TTypeAssertionParensPattern < Pattern
+      class TTwoArgMethodCallParensPattern < Pattern
         def replace(segment)
           segment.gsub(/(T\s*\.(?:assert_type!|cast|let)\(\s*)(.+)(\s*,.+\))(.*)/) do
             "#{" " * $1.length}#{$2}#{" " * $3.length}#{$4}"
@@ -49,17 +50,18 @@ module Sorbet
 
       def on_method_add_arg(call, arg_paren)
         # T.must(foo)
-        if call.match?("<call <var_ref <@const T>> <@period .> <@ident must>>") &&
+        # T.reveal_type(foo)
+        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident (?:must|reveal_type)>>/) &&
           arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
-          patterns << TMustParensPattern.new(call.range.begin..arg_paren.range.end)
+          patterns << TOneArgMethodCallParensPattern.new(call.range.begin..arg_paren.range.end)
         end
 
         # T.assert_type!(foo, bar)
         # T.cast(foo, bar)
         # T.let(foo, bar)
-        if call.match?(/<call <var_ref <@const T>> <@period .> <@ident (assert_type!|cast|let)>>/) &&
+        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident (?:assert_type!|cast|let)>>/) &&
           arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
-          patterns << TTypeAssertionParensPattern.new(call.range.begin..arg_paren.range.end)
+          patterns << TTwoArgMethodCallParensPattern.new(call.range.begin..arg_paren.range.end)
         end
 
         super
