@@ -45,7 +45,7 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 | `mixes_in_class_methods(foo)` | ✅ | `foo` |
 | `sig` | ✅ | |
 | `T.absurd(foo)` | ✅ | `T.absurd(foo)` |
-| `T.assert_type!(foo)` | ✅ | `foo` |
+| `T.assert_type!(foo, bar)` | ✅ | `foo` |
 | `T.bind(self, foo)` | ✅ | `self` |
 | `T.cast(foo, bar)` | ✅ | `foo` |
 | `T.let(foo, bar)` | ✅ | `foo` |
