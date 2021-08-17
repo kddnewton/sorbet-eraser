@@ -5,6 +5,26 @@ require "test_helper"
 module Sorbet
   module Eraser
     class PatternsTest < Minitest::Test
+      def test_include_t_generic
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          include Foo
+          include T::Generic
+        INPUT
+          include Foo
+                            
+        OUTPUT
+      end
+
+      def test_include_t_helpers
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          include Foo
+          include T::Helpers
+        INPUT
+          include Foo
+                            
+        OUTPUT
+      end
+
       def test_extend_t_sig
         assert_erases(<<-INPUT, <<-OUTPUT)
           include Foo

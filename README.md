@@ -34,8 +34,8 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 
 | Construct | Status | Replacement |
 | --------- | ------ | ----------- |
-| `include T::Generic` | 🛠 | |
-| `include T::Helpers` | 🛠 | |
+| `include T::Generic` | ✅ | |
+| `include T::Helpers` | ✅ | |
 | `extend T::Sig` | ✅ | |
 | `class Foo < T::Enum` | 🛠 | `class Foo < ::Sorbet::Eraser::Enum` |
 | `class Foo < T::Struct` | 🛠 | `class Foo < ::Sorbet::Eraser::Struct` |
