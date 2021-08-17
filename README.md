@@ -1,5 +1,8 @@
 # Sorbet::Eraser
 
+[![Build Status](https://github.com/kddnewton/sorbet-eraser/workflows/Main/badge.svg)](https://github.com/kddnewton/sorbet-eraser/actions)
+[![Gem](https://img.shields.io/gem/v/sorbet-eraser.svg)](https://rubygems.org/gems/sorbet-eraser)
+
 Erase all traces of `sorbet-runtime` code.
 
 `sorbet` is a great tool for development. However, in production, it incurs a penalty because it still functions as Ruby code. Even if you completely shim all `sorbet-runtime` method calls (for example by replacing `sig {} ` with a method that immediately returns) you still pay the cost of a method call in the first place.
