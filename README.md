@@ -32,28 +32,30 @@ Alternatively, you can programmatically use this gem through the `Sorbet::Eraser
 
 Below is a table of the status of each `sorbet-runtime` construct and its current support status.
 
-| Construct | Status | Replacement |
-| --------- | ------ | ----------- |
-| `include T::Generic` | ✅ | |
-| `include T::Helpers` | ✅ | |
-| `extend T::Sig` | ✅ | |
-| `class Foo < T::Enum` | 🛠 | `class Foo < T::Enum` |
-| `class Foo < T::Struct` | 🛠 | `class Foo < T::Struct` |
-| `abstract!` | ✅ | |
-| `final!` | ✅ | |
-| `interface!` | ✅ | |
-| `mixes_in_class_methods(foo)` | ✅ | `foo` |
-| `sig` | ✅ | |
-| `T.absurd(foo)` | ✅ | `T.absurd(foo)` |
-| `T.assert_type!(foo, bar)` | ✅ | `foo` |
-| `T.bind(self, foo)` | ✅ | `self` |
-| `T.cast(foo, bar)` | ✅ | `foo` |
-| `T.let(foo, bar)` | ✅ | `foo` |
-| `T.must(foo)` | ✅ | `foo` |
-| `T.must foo` | ✅ | `foo` |
-| `T.reveal_type(foo)` | ✅ | `foo` |
-| `T.type_alias { foo }` | ✅ | `T.type_alias { foo }` |
-| `T.unsafe(foo)` | ✅ | `foo` |
+| Construct                                           | Status | Replacement |
+| --------------------------------------------------- | ------ | ----------- |
+| `extend T::*`                                       | ✅     | Shimmed     |
+| `abstract!`, `final!`, `interface!`, `sealed!`      | ✅     | Shimmed     |
+| `mixes_in_class_methods(*)`, `requires_ancestor(*)` | ✅     | Shimmed     |
+| `type_member(*)`, `type_template(*)`                | ✅     | Shimmed     |
+| `class Foo < T::Enum`                               | 🛠     | Shimmed     |
+| `class Foo < T::Struct`                             | 🛠     | Shimmed     |
+| `sig`                                               | ✅     | Removed     |
+| `T.absurd(foo)`                                     | ✅     | Shimmed     |
+| `T.assert_type!(foo, bar)`                          | ✅     | `foo`       |
+| `T.bind(self, foo)`                                 | ✅     | `self`      |
+| `T.cast(foo, bar)`                                  | ✅     | `foo`       |
+| `T.let(foo, bar)`                                   | ✅     | `foo`       |
+| `T.must(foo)`                                       | ✅     | `foo`       |
+| `T.reveal_type(foo)`                                | ✅     | `foo`       |
+| `T.type_alias { foo }`                              | ✅     | Shimmed     |
+| `T.unsafe(foo)`                                     | ✅     | `foo`       |
+
+In the above table:
+
+* `Shimmed` means that this gem provides a replacement module that will simply do nothing when its respective methods are called. We do this in order to maintain the same interface in the case that someone is doing runtime reflection. Also because anything that is shimmed will not be called that much/will not be in a hot path so performance is not really a consideration for those cases.
+* `Removed` means that the construct is removed entirely from the source.
+* Anything else means that the inputted code is replaced with that output.
 
 ## Development
 

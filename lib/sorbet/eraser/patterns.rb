@@ -137,42 +137,6 @@ module Sorbet
         super
       end
 
-      # include T::Generic =>
-      # include T::Helpers =>
-      class IncludeTModulePattern < Pattern
-        def replace(segment)
-          segment.gsub(/(include\s+T::(?:Generic|Helpers))(.*)/) do
-            "#{blank($1)}#{$2}"
-          end
-        end
-      end
-
-      # extend T::Sig =>
-      class ExtendTSigPattern < Pattern
-        def replace(segment)
-          segment.gsub(/(extend\s+T::Sig)(.*)/) do
-            "#{blank($1)}#{$2}"
-          end
-        end
-      end
-
-      def on_command(ident, args_add_block)
-        # include T::Generic
-        # include T::Helpers
-        if ident.match?("<@ident include>") &&
-          args_add_block.match?(/<args_add_block <args <const_path_ref <var_ref <@const T>> <@const (?:Generic|Helpers)>>> false>/)
-          patterns << IncludeTModulePattern.new(ident.range.begin...args_add_block.range.end)
-        end
-
-        # extend T::Sig
-        if ident.match?("<@ident extend>") &&
-          args_add_block.match?("<args_add_block <args <const_path_ref <var_ref <@const T>> <@const Sig>>> false>")
-          patterns << ExtendTSigPattern.new(ident.range.begin...args_add_block.range.end)
-        end
-
-        super
-      end
-
       # T.must foo => foo
       # T.reveal_type foo => foo
       # T.unsafe foo => foo

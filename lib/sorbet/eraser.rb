@@ -5,6 +5,7 @@ require "ripper"
 require "sorbet/eraser/parser"
 require "sorbet/eraser/patterns"
 require "sorbet/eraser/version"
+require "t"
 
 module Sorbet
   module Eraser
@@ -18,25 +19,5 @@ module Sorbet
     def self.erase(source)
       Parser.erase(source)
     end
-  end
-end
-
-# For some constructs, it doesn't make as much sense to entirely remove them
-# since they're actually used to change runtime behavior. For example, T.absurd
-# will always raise an error. In this case instead of removing the content, we
-# can just shim it.
-module T
-  class TypeAlias
-  end
-
-  def self.type_alias
-    TypeAlias.new
-  end
-
-  class AbsurdError < StandardError
-  end
-
-  def self.absurd(value)
-    raise AbsurdError, value
   end
 end

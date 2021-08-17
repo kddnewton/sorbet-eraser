@@ -5,36 +5,6 @@ require "test_helper"
 module Sorbet
   module Eraser
     class PatternsTest < Minitest::Test
-      def test_include_t_generic
-        assert_erases(<<-INPUT, <<-OUTPUT)
-          include Foo
-          include T::Generic
-        INPUT
-          include Foo
-                            
-        OUTPUT
-      end
-
-      def test_include_t_helpers
-        assert_erases(<<-INPUT, <<-OUTPUT)
-          include Foo
-          include T::Helpers
-        INPUT
-          include Foo
-                            
-        OUTPUT
-      end
-
-      def test_extend_t_sig
-        assert_erases(<<-INPUT, <<-OUTPUT)
-          include Foo
-          extend T::Sig
-        INPUT
-          include Foo
-                       
-        OUTPUT
-      end
-
       def test_sig
         assert_erases(<<-INPUT, <<-OUTPUT)
           def foo; end
@@ -126,46 +96,6 @@ module Sorbet
           foo = T.unsafe bar
         INPUT
           foo =          bar
-        OUTPUT
-      end
-
-      def test_abstract!
-        assert_erases(<<-INPUT, <<-OUTPUT)
-          include Foo
-          abstract!
-        INPUT
-          include Foo
-                   
-        OUTPUT
-      end
-
-      def test_final!
-        assert_erases(<<-INPUT, <<-OUTPUT)
-          include Foo
-          final!
-        INPUT
-          include Foo
-                
-        OUTPUT
-      end
-
-      def test_interface!
-        assert_erases(<<-INPUT, <<-OUTPUT)
-          include Foo
-          interface!
-        INPUT
-          include Foo
-                    
-        OUTPUT
-      end
-
-      def test_mixes_in_class_methods
-        assert_erases(<<-INPUT, <<-OUTPUT)
-          include Foo
-          mixes_in_class_methods(Bar)
-        INPUT
-          include Foo
-                                 Bar 
         OUTPUT
       end
 
