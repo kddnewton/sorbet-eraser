@@ -11,7 +11,7 @@ This gem takes a different approach, but entirely eliminating the `sig` method c
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'sorbet-eraser'
+gem "sorbet-eraser"
 ```
 
 And then execute:
