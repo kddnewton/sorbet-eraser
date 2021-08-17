@@ -1,5 +1,11 @@
 # Sorbet::Eraser
 
+Erase all traces of `sorbet-runtime` code.
+
+`sorbet` is a great tool for development. However, in production, it incurs a penalty because it still functions as Ruby code. Even if you completely shim all `sorbet-runtime` method calls (for example by replacing `sig {} ` with a method that immediately returns) you still pay the cost of a method call in the first place.
+
+This gem takes a different approach, but entirely eliminating the `sig` method call (as well as all the other `sorbet-runtime` constructs) from the source before Ruby compiles it.
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -17,6 +23,37 @@ Or install it yourself as:
     $ gem install sorbet-eraser
 
 ## Usage
+
+Before any code is loaded that would require a `sorbet-runtime` construct, call `require "sorbet/eraser/autoload"`. This will hook into the autoload process to erase all `sorbet-runtime` code before it gets passed to Ruby to parse.
+
+Alternatively, you can programmatically use this gem through the `Sorbet::Eraser.erase(source)` API, where `source` is a string that represents valid Ruby code. Ruby code without the listed constructs will be returned.
+
+### Status
+
+Below is a table of the status of each `sorbet-runtime` construct and its current support status.
+
+| Construct | Status | Replacement |
+| --------- | ------ | ----------- |
+| `include T::Generic` | 🛠 | |
+| `include T::Helpers` | 🛠 | |
+| `extend T::Sig` | ✅ | |
+| `class Foo < T::Enum` | 🛠 | `class Foo < ::Sorbet::Eraser::Enum` |
+| `class Foo < T::Struct` | 🛠 | `class Foo < ::Sorbet::Eraser::Struct` |
+| `abstract!` | 🛠 | |
+| `final!` | 🛠 | |
+| `interface!` | 🛠 | |
+| `mixes_in_class_methods(foo)` | 🛠 | `foo` |
+| `sig` | ✅ | |
+| `T.absurd(foo)` | ✅ | `raise ::Sorbet::Eraser::AbsurdError` |
+| `T.assert_type!(foo)` | ✅ | `foo` |
+| `T.bind(self, foo)` | ✅ | `self` |
+| `T.cast(foo, bar)` | ✅ | `foo` |
+| `T.let(foo, bar)` | ✅ | `foo` |
+| `T.must(foo)` | ✅ | `foo` |
+| `T.must foo` | ✅ | `foo` |
+| `T.reveal_type(foo)` | ✅ | `foo` |
+| `T.type_alias { foo }` | ✅ | `::Sorbet::Eraser::TypeAlias` |
+| `T.unsafe(foo)` | 🛠 | `foo` |
 
 ## Development
 
