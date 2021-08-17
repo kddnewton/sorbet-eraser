@@ -39,9 +39,9 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 | `extend T::Sig` | ✅ | |
 | `class Foo < T::Enum` | 🛠 | `class Foo < ::Sorbet::Eraser::Enum` |
 | `class Foo < T::Struct` | 🛠 | `class Foo < ::Sorbet::Eraser::Struct` |
-| `abstract!` | 🛠 | |
-| `final!` | 🛠 | |
-| `interface!` | 🛠 | |
+| `abstract!` | ✅ | |
+| `final!` | ✅ | |
+| `interface!` | ✅ | |
 | `mixes_in_class_methods(foo)` | 🛠 | `foo` |
 | `sig` | ✅ | |
 | `T.absurd(foo)` | ✅ | `raise ::Sorbet::Eraser::AbsurdError` |

@@ -59,6 +59,17 @@ module Sorbet
         end
       end
 
+      # abstract! =>
+      # final! =>
+      # interface! =>
+      class DeclarationPattern < Pattern
+        def replace(segment)
+          segment.gsub(/((?:abstract|final|interface)!(?:\(\s*\))?)(.*)/) do
+            "#{" " * $1.length}#{$2}"
+          end
+        end
+      end
+
       def on_method_add_arg(call, arg_paren)
         # T.absurd(foo)
         if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident absurd>>/) &&
@@ -85,6 +96,14 @@ module Sorbet
         if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident bind>>/) &&
           arg_paren.match?(/<arg_paren <args_add_block <args <var_ref <@kw self>> .+> false>>/)
           patterns << TTwoArgMethodCallParensPattern.new(call.range.begin..arg_paren.range.end)
+        end
+
+        # abstract!
+        # final!
+        # interface!
+        if call.match?(/<fcall <@ident (?:abstract|final|interface)!>>/) &&
+          arg_paren.match?("<args >")
+          patterns << DeclarationPattern.new(call.range.begin..arg_paren.range.end)
         end
 
         super

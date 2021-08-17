@@ -5,6 +5,7 @@ require "test_helper"
 module Sorbet
   module Eraser
     class PatternsTest < Minitest::Test
+=begin
       def test_extend_t_sig
         assert_erases(<<-INPUT, <<-OUTPUT)
           include Foo
@@ -108,6 +109,36 @@ module Sorbet
           foo = T.type_alias { String }
         INPUT
           foo = ::Sorbet::Eraser::TypeAlias
+        OUTPUT
+      end
+=end
+      def test_abstract!
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          include Foo
+          abstract!
+        INPUT
+          include Foo
+                   
+        OUTPUT
+      end
+
+      def test_final!
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          include Foo
+          final!
+        INPUT
+          include Foo
+                
+        OUTPUT
+      end
+
+      def test_interface!
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          include Foo
+          interface!
+        INPUT
+          include Foo
+                    
         OUTPUT
       end
 
