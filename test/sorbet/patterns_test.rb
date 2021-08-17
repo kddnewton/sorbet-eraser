@@ -123,6 +123,30 @@ module Sorbet
         OUTPUT
       end
 
+      def test_t_reveal_type_no_parens
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          foo = T.reveal_type bar
+        INPUT
+          foo =               bar
+        OUTPUT
+      end
+
+      def test_t_unsafe_parens
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          T.unsafe(foo)
+        INPUT
+                   foo 
+        OUTPUT
+      end
+
+      def test_t_unsafe_no_parens
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          foo = T.unsafe bar
+        INPUT
+          foo =          bar
+        OUTPUT
+      end
+
       def test_t_type_alias
         assert_erases(<<-INPUT, <<-OUTPUT)
           foo = T.type_alias { String }

@@ -39,9 +39,10 @@ module Sorbet
 
       # T.must(foo) => foo
       # T.reveal_type(foo) => foo
+      # T.unsafe(foo) => foo
       class TOneArgMethodCallParensPattern < Pattern
         def replace(segment)
-          segment.gsub(/(T\s*\.(?:must|reveal_type)\(\s*)(.+)(\s*\))(.*)/) do
+          segment.gsub(/(T\s*\.(?:must|reveal_type|unsafe)\(\s*)(.+)(\s*\))(.*)/) do
             "#{" " * $1.length}#{$2}#{" " * $3.length}#{$4}"
           end
         end
@@ -79,7 +80,8 @@ module Sorbet
 
         # T.must(foo)
         # T.reveal_type(foo)
-        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident (?:must|reveal_type)>>/) &&
+        # T.unsafe(foo)
+        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident (?:must|reveal_type|unsafe)>>/) &&
           arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
           patterns << TOneArgMethodCallParensPattern.new(call.range.begin..arg_paren.range.end)
         end
@@ -166,9 +168,11 @@ module Sorbet
       end
 
       # T.must foo => foo
+      # T.reveal_type foo => foo
+      # T.unsafe foo => foo
       class TMustNoParensPattern < Pattern
         def replace(segment)
-          segment.gsub(/(T\s*\.must\s*)(.+)/) do
+          segment.gsub(/(T\s*\.(?:must|reveal_type|unsafe)\s*)(.+)/) do
             "#{" " * $1.length}#{$2}"
           end
         end
@@ -177,7 +181,9 @@ module Sorbet
       def on_command_call(var_ref, period, ident, args_add_block)
         if var_ref.match?("<var_ref <@const T>>") && period.match?("<@period .>")
           # T.must foo
-          if ident.match?("<@ident must>") &&
+          # T.reveal_type foo
+          # T.unsafe foo
+          if ident.match?(/<@ident (?:must|reveal_type|unsafe)>/) &&
             args_add_block.match?(/<args_add_block <args <.+>> false>/) &&
             args_add_block.body[0].body.length == 1
             patterns << TMustNoParensPattern.new(var_ref.range.begin..args_add_block.range.end)

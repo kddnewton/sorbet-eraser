@@ -53,7 +53,7 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 | `T.must foo` | ✅ | `foo` |
 | `T.reveal_type(foo)` | ✅ | `foo` |
 | `T.type_alias { foo }` | ✅ | `::Sorbet::Eraser::TypeAlias` |
-| `T.unsafe(foo)` | 🛠 | `foo` |
+| `T.unsafe(foo)` | ✅ | `foo` |
 
 ## Development
 
