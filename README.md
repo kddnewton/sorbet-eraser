@@ -28,6 +28,14 @@ Before any code is loaded that would require a `sorbet-runtime` construct, call 
 
 Alternatively, you can programmatically use this gem through the `Sorbet::Eraser.erase(source)` API, where `source` is a string that represents valid Ruby code. Ruby code without the listed constructs will be returned.
 
+Finally, this gem ships with a CLI that you can use to modify source files. This is useful for development of this gem itself, but could be useful for others to ensure they see what this gem actually will be doing in production. To run it, run:
+
+```sh
+bundle exec sorbet-eraser '**/*.rb'
+```
+
+It accepts any number of filepaths/patterns on the command line and will modify the source files with their erased contents.
+
 ### Status
 
 Below is a table of the status of each `sorbet-runtime` construct and its current support status.
@@ -38,7 +46,7 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 | `abstract!`, `final!`, `interface!`, `sealed!`      | ✅     | Shimmed     |
 | `mixes_in_class_methods(*)`, `requires_ancestor(*)` | ✅     | Shimmed     |
 | `type_member(*)`, `type_template(*)`                | ✅     | Shimmed     |
-| `class Foo < T::Enum`                               | 🛠     | Shimmed     |
+| `class Foo < T::Enum`                               | ✅     | Shimmed     |
 | `class Foo < T::Struct`                             | 🛠     | Shimmed     |
 | `sig`                                               | ✅     | Removed     |
 | `T.absurd(foo)`                                     | ✅     | Shimmed     |
