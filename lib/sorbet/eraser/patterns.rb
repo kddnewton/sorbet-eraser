@@ -71,6 +71,15 @@ module Sorbet
         end
       end
 
+      # mixes_in_class_methods(foo) => foo
+      class MixesInClassMethodsPattern < Pattern
+        def replace(segment)
+          segment.gsub(/(mixes_in_class_methods\(\s*)(.+)(\s*\))(.*)/) do
+            "#{" " * $1.length}#{$2}#{" " * $3.length}#{$4}"
+          end
+        end
+      end
+
       def on_method_add_arg(call, arg_paren)
         # T.absurd(foo)
         if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident absurd>>/) &&
@@ -106,6 +115,12 @@ module Sorbet
         if call.match?(/<fcall <@ident (?:abstract|final|interface)!>>/) &&
           arg_paren.match?("<args >")
           patterns << DeclarationPattern.new(call.range.begin..arg_paren.range.end)
+        end
+
+        # mixes_in_class_methods(foo)
+        if call.match?("<fcall <@ident mixes_in_class_methods>>") &&
+          arg_paren.match?(/<arg_paren <args_add_block <args <.+>>> false>>/)
+          patterns << MixesInClassMethodsPattern.new(call.range.begin..arg_paren.range.end)
         end
 
         super

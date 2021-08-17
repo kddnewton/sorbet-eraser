@@ -42,7 +42,7 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 | `abstract!` | ✅ | |
 | `final!` | ✅ | |
 | `interface!` | ✅ | |
-| `mixes_in_class_methods(foo)` | 🛠 | `foo` |
+| `mixes_in_class_methods(foo)` | ✅ | `foo` |
 | `sig` | ✅ | |
 | `T.absurd(foo)` | ✅ | `raise ::Sorbet::Eraser::AbsurdError` |
 | `T.assert_type!(foo)` | ✅ | `foo` |

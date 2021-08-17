@@ -185,6 +185,16 @@ module Sorbet
         OUTPUT
       end
 
+      def test_mixes_in_class_methods
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          include Foo
+          mixes_in_class_methods(Bar)
+        INPUT
+          include Foo
+                                 Bar 
+        OUTPUT
+      end
+
       private
 
       def assert_erases(input, output)
