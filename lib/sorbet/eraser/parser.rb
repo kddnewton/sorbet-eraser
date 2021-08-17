@@ -35,7 +35,10 @@ module Sorbet
         end
 
         def [](byteindex)
-          @indices[byteindex]
+          # Why the || byteindex? I'm not sure. For some reason ripper is
+          # returning very odd column values when you have a multibyte line.
+          # This is the only way I could find to make it work.
+          @indices[byteindex] || byteindex
         end
       end
 
@@ -60,11 +63,16 @@ module Sorbet
         end
       end
 
-      attr_reader :line_counts, :patterns
+      # Raised in the case that source can't be parsed.
+      class ParsingError < StandardError
+      end
+
+      attr_reader :source, :line_counts, :errors, :patterns
 
       def initialize(source)
         super(source)
 
+        @source = source
         @line_counts = []
         last_index = 0
 
@@ -78,6 +86,7 @@ module Sorbet
           last_index += line.size
         end
 
+        @errors = []
         @patterns = []
       end
 
@@ -85,7 +94,7 @@ module Sorbet
         parser = new(source)
 
         if parser.parse.nil? || parser.error?
-          raise "Invalid source"
+          raise ParsingError, parser.errors.join("\n")
         else
           parser.patterns.inject(source) do |current, pattern|
             pattern.erase(current)
@@ -113,14 +122,13 @@ module Sorbet
       # it's an _add method then just append to the array. If it's a normal
       # method, then create a new node and determine its bounds.
       PARSER_EVENT_TABLE.each do |event, arity|
-        case event
-        when /\A(.+)_new\z/
+        if event =~ /\A(.+)_new\z/ && event != :assoc_new
           prefix = $1.to_sym
 
           define_method(:"on_#{event}") do
             Node.new(prefix, [], loc.then { |start| start..start })
           end
-        when /_add\z/
+        elsif event =~ /_add\z/
           define_method(:"on_#{event}") do |node, value|
             range =
               if node.body.empty?
@@ -131,6 +139,8 @@ module Sorbet
 
             node.class.new(node.event, node.body + [value], range)
           end
+        elsif event == :parse_error
+          # skip this, as we're going to define it below
         else
           define_method(:"on_#{event}") do |*args|
             first, *, last = args.grep(Node).map(&:range)
@@ -141,6 +151,11 @@ module Sorbet
             Node.new(event, args, first.begin..[last.end, loc].max)
           end
         end
+      end
+
+      # Track the parsing errors for nicer error messages.
+      def on_parse_error(error)
+        errors << "line #{lineno}: #{error}"
       end
     end
   end

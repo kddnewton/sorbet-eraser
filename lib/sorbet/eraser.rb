@@ -8,14 +8,6 @@ require "sorbet/eraser/version"
 
 module Sorbet
   module Eraser
-    # This error gets raise in place of any T.absurd calls.
-    class AbsurdError < StandardError
-    end
-
-    # This class gets put in place of any existing T.type_alias calls.
-    class TypeAlias
-    end
-
     # Hook the patterns into the parser so that the correct methods get
     # overridden and will trigger replacements.
     Parser.prepend(Patterns)
@@ -26,5 +18,25 @@ module Sorbet
     def self.erase(source)
       Parser.erase(source)
     end
+  end
+end
+
+# For some constructs, it doesn't make as much sense to entirely remove them
+# since they're actually used to change runtime behavior. For example, T.absurd
+# will always raise an error. In this case instead of removing the content, we
+# can just shim it.
+module T
+  class TypeAlias
+  end
+
+  def self.type_alias
+    TypeAlias.new
+  end
+
+  class AbsurdError < StandardError
+  end
+
+  def self.absurd(value)
+    raise AbsurdError, value
   end
 end

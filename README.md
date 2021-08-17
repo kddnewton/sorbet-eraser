@@ -37,14 +37,14 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 | `include T::Generic` | ✅ | |
 | `include T::Helpers` | ✅ | |
 | `extend T::Sig` | ✅ | |
-| `class Foo < T::Enum` | 🛠 | `class Foo < ::Sorbet::Eraser::Enum` |
-| `class Foo < T::Struct` | 🛠 | `class Foo < ::Sorbet::Eraser::Struct` |
+| `class Foo < T::Enum` | 🛠 | `class Foo < T::Enum` |
+| `class Foo < T::Struct` | 🛠 | `class Foo < T::Struct` |
 | `abstract!` | ✅ | |
 | `final!` | ✅ | |
 | `interface!` | ✅ | |
 | `mixes_in_class_methods(foo)` | ✅ | `foo` |
 | `sig` | ✅ | |
-| `T.absurd(foo)` | ✅ | `raise ::Sorbet::Eraser::AbsurdError` |
+| `T.absurd(foo)` | ✅ | `T.absurd(foo)` |
 | `T.assert_type!(foo)` | ✅ | `foo` |
 | `T.bind(self, foo)` | ✅ | `self` |
 | `T.cast(foo, bar)` | ✅ | `foo` |
@@ -52,7 +52,7 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 | `T.must(foo)` | ✅ | `foo` |
 | `T.must foo` | ✅ | `foo` |
 | `T.reveal_type(foo)` | ✅ | `foo` |
-| `T.type_alias { foo }` | ✅ | `::Sorbet::Eraser::TypeAlias` |
+| `T.type_alias { foo }` | ✅ | `T.type_alias { foo }` |
 | `T.unsafe(foo)` | ✅ | `foo` |
 
 ## Development

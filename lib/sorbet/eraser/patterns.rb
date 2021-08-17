@@ -5,10 +5,11 @@ module Sorbet
     module Patterns
       # A pattern in code that represents a call to a special Sorbet method.
       class Pattern
-        attr_reader :range
+        attr_reader :range, :metadata
 
-        def initialize(range)
+        def initialize(range, **metadata)
           @range = range
+          @metadata = metadata
         end
 
         def erase(source)
@@ -22,18 +23,15 @@ module Sorbet
           source
         end
 
+        def blank(segment)
+          # This is deceptive in that it hides that it actually replaces
+          # everything with spaces _except_ newline characters, which is keeps
+          # in place.
+          segment.gsub(/./, " ")
+        end
+
         def replace(segment)
           segment
-        end
-      end
-
-      # T.absurd(foo) => raise ::Sorbet::Eraser::AbsurdError
-      class TAbsurdParensPattern < Pattern
-        def replace(segment)
-          segment.gsub(/(T\s*\.absurd\(\s*.+\s*\))(.*)/) do
-            replacement = "raise ::Sorbet::Eraser::AbsurdError"
-            "#{replacement}#{" " * [$1.length - replacement.length, 0].max}#{$2}"
-          end
         end
       end
 
@@ -42,8 +40,8 @@ module Sorbet
       # T.unsafe(foo) => foo
       class TOneArgMethodCallParensPattern < Pattern
         def replace(segment)
-          segment.gsub(/(T\s*\.(?:must|reveal_type|unsafe)\(\s*)(.+)(\s*\))(.*)/) do
-            "#{" " * $1.length}#{$2}#{" " * $3.length}#{$4}"
+          segment.gsub(/(T\s*\.(?:must|reveal_type|unsafe)\(\s*)(.+)(\s*\))(.*)/m) do
+            "#{blank($1)}#{$2}#{blank($3)}#{$4}"
           end
         end
       end
@@ -54,9 +52,20 @@ module Sorbet
       # T.let(foo, bar) => let
       class TTwoArgMethodCallParensPattern < Pattern
         def replace(segment)
-          segment.gsub(/(T\s*\.(?:assert_type!|bind|cast|let)\(\s*)(.+)(\s*,.+\))(.*)/) do
-            "#{" " * $1.length}#{$2}#{" " * $3.length}#{$4}"
-          end
+          replacement = segment.dup
+
+          # We can't really rely on regex here because commas have semantic
+          # meaning and you might have some in the value of the first argument.
+          comma = metadata.fetch(:comma)
+          pre, post = 0..comma, (comma + 1)..-1
+
+          replacement[pre] =
+            replacement[pre].gsub(/(T\s*\.(?:assert_type!|bind|cast|let)\(\s*)(.+)(\s*,)(.*)/m) do
+              "#{blank($1)}#{$2}#{blank($3)}#{$4}"
+            end
+
+          replacement[post] = blank(replacement[post])
+          replacement
         end
       end
 
@@ -66,7 +75,7 @@ module Sorbet
       class DeclarationPattern < Pattern
         def replace(segment)
           segment.gsub(/((?:abstract|final|interface)!(?:\(\s*\))?)(.*)/) do
-            "#{" " * $1.length}#{$2}"
+            "#{blank($1)}#{$2}"
           end
         end
       end
@@ -74,39 +83,41 @@ module Sorbet
       # mixes_in_class_methods(foo) => foo
       class MixesInClassMethodsPattern < Pattern
         def replace(segment)
-          segment.gsub(/(mixes_in_class_methods\(\s*)(.+)(\s*\))(.*)/) do
-            "#{" " * $1.length}#{$2}#{" " * $3.length}#{$4}"
+          segment.gsub(/(mixes_in_class_methods\(\s*)(.+)(\s*\))(.*)/m) do
+            "#{blank($1)}#{$2}#{blank($3)}#{$4}"
           end
         end
       end
 
       def on_method_add_arg(call, arg_paren)
-        # T.absurd(foo)
-        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident absurd>>/) &&
-          arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
-          patterns << TAbsurdParensPattern.new(call.range.begin..arg_paren.range.end)
-        end
-
         # T.must(foo)
         # T.reveal_type(foo)
         # T.unsafe(foo)
         if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident (?:must|reveal_type|unsafe)>>/) &&
           arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
-          patterns << TOneArgMethodCallParensPattern.new(call.range.begin..arg_paren.range.end)
+          patterns << TOneArgMethodCallParensPattern.new(call.range.begin...arg_paren.range.end)
         end
 
         # T.assert_type!(foo, bar)
         # T.cast(foo, bar)
         # T.let(foo, bar)
-        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident (?:assert_type!|cast|let)>>/) &&
+        if call.match?(/\A<call <var_ref <@const T>> <@period \.> <@ident (?:assert_type!|cast|let)>>\z/) &&
           arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
-          patterns << TTwoArgMethodCallParensPattern.new(call.range.begin..arg_paren.range.end)
+          patterns <<
+            TTwoArgMethodCallParensPattern.new(
+              call.range.begin...arg_paren.range.end,
+              comma: arg_paren.body[0].body[0].body[0].range.end - call.range.begin
+            )
         end
 
         # T.bind(self, foo)
         if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident bind>>/) &&
           arg_paren.match?(/<arg_paren <args_add_block <args <var_ref <@kw self>> .+> false>>/)
-          patterns << TTwoArgMethodCallParensPattern.new(call.range.begin..arg_paren.range.end)
+          patterns <<
+            TTwoArgMethodCallParensPattern.new(
+              call.range.begin...arg_paren.range.end,
+              comma: arg_paren.body[0].body[0].body[0].range.end - call.range.begin
+            )
         end
 
         # abstract!
@@ -114,33 +125,13 @@ module Sorbet
         # interface!
         if call.match?(/<fcall <@ident (?:abstract|final|interface)!>>/) &&
           arg_paren.match?("<args >")
-          patterns << DeclarationPattern.new(call.range.begin..arg_paren.range.end)
+          patterns << DeclarationPattern.new(call.range.begin...arg_paren.range.end)
         end
 
         # mixes_in_class_methods(foo)
         if call.match?("<fcall <@ident mixes_in_class_methods>>") &&
           arg_paren.match?(/<arg_paren <args_add_block <args <.+>>> false>>/)
-          patterns << MixesInClassMethodsPattern.new(call.range.begin..arg_paren.range.end)
-        end
-
-        super
-      end
-
-      # T.type_alias { foo } => ::Sorbet::Eraser::TypeAlias
-      class TTypeAliasBraceBlockPattern < Pattern
-        def replace(segment)
-          segment.gsub(/(T\s*\.type_alias\s*\{.*\})(.*)/) do
-            replacement = "::Sorbet::Eraser::TypeAlias"
-            "#{replacement}#{" " * [$1.length - replacement.length, 0].max}#{$2}"
-          end
-        end
-      end
-
-      def on_method_add_block(method_add_arg, block)
-        # T.type_alias { foo }
-        if method_add_arg.match?("<call <var_ref <@const T>> <@period .> <@ident type_alias>>") &&
-          block.match?(/<brace_block  <stmts .+>>/)
-          patterns << TTypeAliasBraceBlockPattern.new(method_add_arg.range.begin..block.range.end)
+          patterns << MixesInClassMethodsPattern.new(call.range.begin...arg_paren.range.end)
         end
 
         super
@@ -151,7 +142,7 @@ module Sorbet
       class IncludeTModulePattern < Pattern
         def replace(segment)
           segment.gsub(/(include\s+T::(?:Generic|Helpers))(.*)/) do
-            "#{" " * $1.length}#{$2}"
+            "#{blank($1)}#{$2}"
           end
         end
       end
@@ -160,7 +151,7 @@ module Sorbet
       class ExtendTSigPattern < Pattern
         def replace(segment)
           segment.gsub(/(extend\s+T::Sig)(.*)/) do
-            "#{" " * $1.length}#{$2}"
+            "#{blank($1)}#{$2}"
           end
         end
       end
@@ -170,13 +161,13 @@ module Sorbet
         # include T::Helpers
         if ident.match?("<@ident include>") &&
           args_add_block.match?(/<args_add_block <args <const_path_ref <var_ref <@const T>> <@const (?:Generic|Helpers)>>> false>/)
-          patterns << IncludeTModulePattern.new(ident.range.begin..args_add_block.range.end)
+          patterns << IncludeTModulePattern.new(ident.range.begin...args_add_block.range.end)
         end
 
         # extend T::Sig
         if ident.match?("<@ident extend>") &&
           args_add_block.match?("<args_add_block <args <const_path_ref <var_ref <@const T>> <@const Sig>>> false>")
-          patterns << ExtendTSigPattern.new(ident.range.begin..args_add_block.range.end)
+          patterns << ExtendTSigPattern.new(ident.range.begin...args_add_block.range.end)
         end
 
         super
@@ -188,7 +179,7 @@ module Sorbet
       class TMustNoParensPattern < Pattern
         def replace(segment)
           segment.gsub(/(T\s*\.(?:must|reveal_type|unsafe)\s*)(.+)/) do
-            "#{" " * $1.length}#{$2}"
+            "#{blank($1)}#{$2}"
           end
         end
       end
@@ -201,7 +192,7 @@ module Sorbet
           if ident.match?(/<@ident (?:must|reveal_type|unsafe)>/) &&
             args_add_block.match?(/<args_add_block <args <.+>> false>/) &&
             args_add_block.body[0].body.length == 1
-            patterns << TMustNoParensPattern.new(var_ref.range.begin..args_add_block.range.end)
+            patterns << TMustNoParensPattern.new(var_ref.range.begin...args_add_block.range.end)
           end
         end
 
@@ -211,8 +202,8 @@ module Sorbet
       # sig { foo } =>
       class SigBracesPattern < Pattern
         def replace(segment)
-          segment.gsub(/(sig\s*\{.+\})(.*)/) do
-            "#{" " * $1.length}#{$2}"
+          segment.gsub(/(sig\s*\{.+\})(.*)/m) do
+            "#{blank($1)}#{$2}"
           end
         end
       end

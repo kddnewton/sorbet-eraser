@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+
+$:.unshift(File.expand_path("../lib", __dir__))
+require "sorbet/eraser"
+require "sorbet/eraser/cli"
+
+Sorbet::Eraser::CLI.start(ARGV)

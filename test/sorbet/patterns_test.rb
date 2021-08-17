@@ -49,24 +49,6 @@ module Sorbet
         OUTPUT
       end
 
-      def test_t_absurd_parens
-        assert_erases(<<-INPUT, <<-OUTPUT)
-          case foo
-          when bar
-            baz
-          else
-            T.absurd(foo)
-          end
-        INPUT
-          case foo
-          when bar
-            baz
-          else
-            raise ::Sorbet::Eraser::AbsurdError
-          end
-        OUTPUT
-      end
-
       def test_t_assert_type_parens
         assert_erases(<<-INPUT, <<-OUTPUT)
           foo = T.assert_type!(bar, String)
@@ -144,14 +126,6 @@ module Sorbet
           foo = T.unsafe bar
         INPUT
           foo =          bar
-        OUTPUT
-      end
-
-      def test_t_type_alias
-        assert_erases(<<-INPUT, <<-OUTPUT)
-          foo = T.type_alias { String }
-        INPUT
-          foo = ::Sorbet::Eraser::TypeAlias
         OUTPUT
       end
 
