@@ -1,22 +1,31 @@
 # frozen_string_literal: true
 
-lib = File.expand_path("../lib", __FILE__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "sorbet/eraser/version"
+require_relative "lib/sorbet/eraser/version"
+
+version = Sorbet::Eraser::VERSION
+repository = "https://github.com/kddnewton/sorbet-eraser"
 
 Gem::Specification.new do |spec|
   spec.name          = "sorbet-eraser"
-  spec.version       = Sorbet::Eraser::VERSION
+  spec.version       = version
   spec.authors       = ["Kevin Newton"]
   spec.email         = ["kddnewton@gmail.com"]
 
   spec.summary       = "Erase all traces of sorbet-runtime code."
-  spec.homepage      = "https://github.com/kddnewton/sorbet-eraser"
+  spec.homepage      = repository
   spec.license       = "MIT"
 
-  spec.files         = Dir.chdir(File.expand_path('..', __FILE__)) do
+  spec.metadata = {
+    "bug_tracker_uri" => "#{repository}/issues",
+    "changelog_uri" => "#{repository}/blob/v#{version}/CHANGELOG.md",
+    "source_code_uri" => repository,
+    "rubygems_mfa_required" => "true"
+  }
+
+  spec.files = Dir.chdir(File.expand_path('..', __FILE__)) do
     `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   end
+
   spec.bindir        = "exe"
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
