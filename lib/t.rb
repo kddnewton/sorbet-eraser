@@ -33,6 +33,34 @@ module T
   module Sig
   end
 
+  # I really don't want to be shimming this, but there are places where people
+  # try to reference these values.
+  module Private
+    module RuntimeLevels
+      def self.default_checked_level; :never; end
+    end
+  
+    module Methods
+      module MethodHooks
+      end
+
+      module SingletonMethodHooks
+      end
+
+      def self.signature_for_method(method); method; end
+    end
+  end
+
+  # I also don't want to shim this, but there are places where people will
+  # reference it.
+  module Configuration
+    class << self
+      attr_accessor :inline_type_error_handler,
+                    :call_validation_error_handler,
+                    :sig_builder_error_handler
+    end
+  end
+
   # Type aliases don't actually do anything, but they are usually assigned to
   # constants, so in that case we need to return something.
   def self.type_alias

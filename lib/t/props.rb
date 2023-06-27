@@ -41,13 +41,7 @@ module T
     # class level and set appropriate values.
     def initialize(hash = {})
       self.class.props.each do |name, rules|
-        if hash.key?(name)
-          instance_variable_set("@#{name}", hash.delete(name))
-        elsif rules.key?(:default)
-          instance_variable_set("@#{name}", rules[:default])
-        else
-          raise ArgumentError, "missing keyword: #{name}"
-        end
+        instance_variable_set("@#{name}", hash.key?(name) ? hash.delete(name) : rules[:default])
       end
 
       raise ArgumentError, "unknown keyword: #{hash.keys.first}" unless hash.empty?

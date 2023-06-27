@@ -70,7 +70,7 @@ module Sorbet
       class ParsingError < StandardError
       end
 
-      attr_reader :source, :line_counts, :errors, :patterns
+      attr_reader :source, :line_counts, :errors, :patterns, :heredocs
 
       def initialize(source)
         super(source)
@@ -91,6 +91,7 @@ module Sorbet
 
         @errors = []
         @patterns = []
+        @heredocs = []
       end
 
       def self.erase(source)
@@ -133,15 +134,6 @@ module Sorbet
         end
       end
 
-      # Loop through all of the scanner events and define a basic method that
-      # wraps everything into a node class.
-      SCANNER_EVENTS.each do |event|
-        define_method(:"on_#{event}") do |value|
-          range = loc.then { |start| start...(start + (value&.size || 0)) }
-          Node.new(:"@#{event}", [value], range)
-        end
-      end
-
       # Better location information for aref.
       def on_aref(recv, arg)
         rend = arg.range.end + source[arg.range.end..].index("]") + 1
@@ -150,23 +142,90 @@ module Sorbet
 
       # Better location information for arg_paren.
       def on_arg_paren(arg)
-        rbegin = source[..arg.range.begin].rindex("(")
-        rend = arg.range.end + source[arg.range.end..].index(")") + 1
-        Node.new(:arg_paren, [arg], rbegin...rend)
+        if arg
+          rbegin = source[..arg.range.begin].rindex("(")
+          rend = arg.range.end + source[arg.range.end..].index(")") + 1
+          Node.new(:arg_paren, [arg], rbegin...rend)
+        else
+          segment = source[..loc]
+          Node.new(:arg_paren, [arg], segment.rindex("(")...(segment.rindex(")") + 1))
+        end
+      end
+
+      LISTS = { qsymbols: "%i", qwords: "%w", symbols: "%I", words: "%W" }.freeze
+      TERMINATORS = { "[" => "]", "{" => "}", "(" => ")", "<" => ">" }.freeze
+
+      # Better location information for array.
+      def on_array(arg)
+        case arg&.event
+        when nil
+          segment = source[..loc]
+          Node.new(:array, [arg], segment.rindex("[")...(segment.rindex("]") + 1))
+        when :qsymbols, :qwords, :symbols, :words
+          rbegin = source[...arg.range.begin].rindex(LISTS.fetch(arg.event))
+          rend = source[arg.range.end..].index(TERMINATORS.fetch(source[rbegin + 2]) { source[rbegin + 2] }) + arg.range.end + 1
+          Node.new(:array, [arg], rbegin...rend)
+        else
+          Node.new(:array, [arg], arg.range)
+        end
       end
 
       # Better location information for brace_block.
       def on_brace_block(params, body)
-        rbegin = source[...(params || body).range.begin].rindex("{")
-        rend = body.range.end + source[body.range.end..].index("}") + 1
-        Node.new(:brace_block, [params, body], rbegin...rend)
+        if params || body.range
+          rbegin = source[...(params || body).range.begin].rindex("{")
+
+          rend = body.range&.end || params.range.end
+          rend = rend + source[rend..].index("}") + 1
+
+          Node.new(:brace_block, [params, body], rbegin...rend)
+        else
+          segment = source[..loc]
+          Node.new(:brace_block, [params, body], segment.rindex("{")...(segment.rindex("}") + 1))
+        end
       end
 
       # Better location information for do_block.
       def on_do_block(params, body)
-        rbegin = source[...(params || body).range.begin].rindex("do")
-        rend = body.range.end + source[body.range.end..].index("end") + 3
-        Node.new(:do_block, [params, body], rbegin...rend)
+        if params || body.range
+          rbegin = source[...(params || body).range.begin].rindex("do")
+
+          rend = body.range&.end || params.range.end
+          rend = rend + source[rend..].index("end") + 3
+
+          Node.new(:do_block, [params, body], rbegin...rend)
+        else
+          segment = source[..loc]
+          Node.new(:do_block, [params, body], segment.rindex("do")...(segment.rindex("end") + 3))
+        end
+      end
+
+      # Better location information for hash.
+      def on_hash(arg)
+        if arg
+          Node.new(:hash, [arg], arg.range)
+        else
+          segment = source[..loc]
+          Node.new(:hash, [arg], segment.rindex("{")...(segment.rindex("}") + 1))
+        end
+      end
+
+      # Track the open heredocs so we can replace the string literal ranges with
+      # the range of their declarations.
+      def on_heredoc_beg(value)
+        range = loc.then { |start| start...(start + value.size) }
+        heredocs << [range, value, nil]
+
+        Node.new(:@heredoc_beg, [value], range)
+      end
+
+      # If a heredoc ends, then the next string literal event will be the
+      # heredoc.
+      def on_heredoc_end(value)
+        range = loc.then { |start| start...(start + value.size) }
+        heredocs.find { |(_, beg_arg, end_arg)| beg_arg.include?(value.strip) && end_arg.nil? }[2] = value
+
+        Node.new(:@heredoc_end, [value], range)
       end
 
       # Track the parsing errors for nicer error messages.
@@ -174,12 +233,33 @@ module Sorbet
         errors << "line #{lineno}: #{error}"
       end
 
+      # Better location information for string_literal taking into account
+      # heredocs.
+      def on_string_literal(arg)
+        if heredoc = heredocs.find { |(_, _, end_arg)| end_arg }
+          Node.new(:string_literal, [arg], heredocs.delete(heredoc)[0])
+        else
+          Node.new(:string_literal, [arg], arg.range)
+        end
+      end
+
+      handled = private_instance_methods(false)
+
+      # Loop through all of the scanner events and define a basic method that
+      # wraps everything into a node class.
+      SCANNER_EVENTS.each do |event|
+        next if handled.include?(:"on_#{event}")
+
+        define_method(:"on_#{event}") do |value|
+          range = loc.then { |start| start...(start + (value&.size || 0)) }
+          Node.new(:"@#{event}", [value], range)
+        end
+      end
+
       # Loop through the parser events and generate a method for each event. If
       # it's one of the _new methods, then use arrays like SexpBuilderPP. If
       # it's an _add method then just append to the array. If it's a normal
       # method, then create a new node and determine its bounds.
-      handled = private_instance_methods(false)
-
       PARSER_EVENT_TABLE.each do |event, arity|
         next if handled.include?(:"on_#{event}")
 
@@ -194,8 +274,10 @@ module Sorbet
             range =
               if node.body.empty?
                 value.range
-              else
+              elsif node.range && value.range
                 (node.range.begin...value.range.end)
+              else
+                node.range || value.range
               end
 
             node.class.new(node.event, node.body + [value], range)

@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    sorbet-eraser (0.3.0)
+    sorbet-eraser (0.3.1)
 
 GEM
   remote: https://rubygems.org/
@@ -10,6 +10,7 @@ GEM
     rake (13.0.6)
 
 PLATFORMS
+  arm64-darwin-21
   arm64-darwin-22
   x86_64-darwin-19
   x86_64-darwin-21
@@ -22,4 +23,4 @@ DEPENDENCIES
   sorbet-eraser!
 
 BUNDLED WITH
-   2.2.15
+   2.4.12

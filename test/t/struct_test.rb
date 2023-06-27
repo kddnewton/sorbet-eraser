@@ -12,9 +12,6 @@ module T
     end
 
     def test_struct
-      # Check that we get an argument error if we don't pass in the right keys.
-      assert_raises(ArgumentError) { TestStruct.new({}) }
-
       # Check that we get an argument error if we pass in too many keys.
       assert_raises(ArgumentError) do
         TestStruct.new(prop1: 1, prop2: 2, const1: 3, const2: 4, extra: 5)

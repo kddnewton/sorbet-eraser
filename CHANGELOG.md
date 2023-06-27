@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
+## [0.3.1] - 2023-06-27
+
+### Added
+
+- Shims for `T::Configuration`, `T::Private::RuntimeLevels`, and `T::Methods`.
+
+### Changed
+
+- Fixed various parsing bugs due to incorrect location.
+
 ## [0.3.0] - 2023-06-27
 
 ### Added

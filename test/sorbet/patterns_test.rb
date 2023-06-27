@@ -69,6 +69,14 @@ module Sorbet
         OUTPUT
       end
 
+      def test_t_let_array
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          KEYWORDS = T.let(%w[__FILE__ __LINE__ alias and begin BEGIN break case class def defined? do else elsif end END ensure false for if in module next nil not or redo rescue retry return self super then true undef unless until when while yield], T::Array[String])
+        INPUT
+          KEYWORDS =       %w[__FILE__ __LINE__ alias and begin BEGIN break case class def defined? do else elsif end END ensure false for if in module next nil not or redo rescue retry return self super then true undef unless until when while yield]                   
+        OUTPUT
+      end
+
       def test_t_must_parens
         assert_erases(<<-INPUT, <<-OUTPUT)
           foo = T.must(bar)
