@@ -5,7 +5,6 @@ require "test_helper"
 module Sorbet
   module Eraser
     class PatternsTest < Minitest::Test
-=begin
       def test_sig
         assert_erases(<<-INPUT, <<-OUTPUT)
           def foo; end
@@ -99,7 +98,7 @@ module Sorbet
           foo =          bar
         OUTPUT
       end
-=end
+
       def test_t_struct
         assert_erases(<<-INPUT, <<-OUTPUT)
           class Foo < T::Struct

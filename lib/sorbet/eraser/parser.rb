@@ -185,6 +185,13 @@ module Sorbet
         Node.new(:arg_paren, [arg], rbegin...rend)
       end
 
+      # Better location information for brace_block.
+      def on_brace_block(params, body)
+        rbegin = source[...(params || body).range.begin].rindex("{")
+        rend = body.range.end + source[body.range.end..].index("}") + 1
+        Node.new(:brace_block, [params, body], rbegin...rend)
+      end
+
       # Track the parsing errors for nicer error messages.
       def on_parse_error(error)
         errors << "line #{lineno}: #{error}"
