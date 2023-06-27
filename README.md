@@ -39,6 +39,8 @@ bundle exec sorbet-eraser '**/*.rb'
 
 It accepts any number of filepaths/patterns on the command line and will modify the source files with their erased contents.  Alternatively, you can programmatically use this gem through the `Sorbet::Eraser.erase(source)` API, where `source` is a string that represents valid Ruby code. Ruby code without the listed constructs will be returned.
 
+If you used any runtime structures like `T::Struct` or `T::Enum` you'll need a runtime shim. For that, you can add `require "t"` to your codebase, which ships with this gem, or in your gemfile `gem "sorbet-eraser", require: "t"`.
+
 ### Status
 
 Below is a table of the status of each `sorbet-runtime` construct and its current support status.
