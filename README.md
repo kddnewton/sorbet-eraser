@@ -5,9 +5,37 @@
 
 Erase all traces of `sorbet-runtime` code.
 
-`sorbet` is a great tool for development. However, in production, it incurs a penalty because it still functions as Ruby code. Even if you completely shim all `sorbet-runtime` method calls (for example by replacing `sig {} ` with a method that immediately returns) you still pay the cost of a method call in the first place.
+[Sorbet](https://sorbet.org/) is a type checker for Ruby. To annotate types in your Ruby code, you use constructs like `sig` and `T.let`. Sorbet then uses a static analysis tool to check that your code is type safe. At runtime, these types are enforced by the `sorbet-runtime` gem that provides implementations of all of these constructs.
 
-This gem takes a different approach, but entirely eliminating the `sig` method call (as well as all the other `sorbet-runtime` constructs) from the source before Ruby compiles it.
+Sometimes, you want to use Sorbet for development, but don't want to run `sorbet-runtime` in production. This may be because you have a performance-critical application, or because you're writing a library and you don't want to impose a runtime dependency on your users.
+
+To handle these use cases, `sorbet-eraser` provides a way to erase all traces of `sorbet-runtime` code from your source code. This means that you can use Sorbet for development, but not have to worry about `sorbet-runtime` in production. For example,
+
+```ruby
+class HelloWorld
+  extend T::Sig
+
+  sig { returns(String) }
+  def hello
+    T.let("World!", String)
+  end
+end
+```
+
+will be transformed into
+
+```ruby
+class HelloWorld
+               
+
+                         
+  def hello
+          "World!"         
+  end
+end
+```
+
+Notice that the `extend T::Sig` and `sig` constructs have been removed from your source code. Notice also that all line and column information has been preserved 1:1, so that stack traces and tracepoints will still be accurate.
 
 ## Installation
 
@@ -27,19 +55,37 @@ Or install it yourself as:
 
 ## Usage
 
-There are two ways to use this gem, depending on your needs.
+There are two ways to use this gem, depending on your needs. You can erase `sorbet-runtime` code ahead of time or just in time.
 
-The first is that you can hook into the Ruby compilation process and do just-in-time erasure. To do this — before any code is loaded that would require a `sorbet-runtime` construct — call `require "sorbet/eraser/autoload"`. This will hook into the autoload process to erase all `sorbet-runtime` code before it gets passed to Ruby to parse. This eliminates the need for a build step, but slows down your parse/boot time.
+### Ahead of time
 
-The second is that you can preprocess your Ruby files using either the CLI or the Ruby API. With the CLI, you would run:
+To erase `sorbet-runtime` code ahead of time, you would either use the CLI provided with this gem or the Ruby API. With the CLI, you would run:
 
 ```bash
 bundle exec sorbet-eraser '**/*.rb'
 ```
 
-It accepts any number of filepaths/patterns on the command line and will modify the source files with their erased contents.  Alternatively, you can programmatically use this gem through the `Sorbet::Eraser.erase(source)` API, where `source` is a string that represents valid Ruby code. Ruby code without the listed constructs will be returned.
+It accepts any number of filepaths/patterns on the command line and will modify the source files in place with their erased contents. If you would instead prefer to script it yourself using the Ruby API, you would run:
 
-If you used any runtime structures like `T::Struct` or `T::Enum` you'll need a runtime shim. For that, you can add `require "t"` to your codebase, which ships with this gem, or in your gemfile `gem "sorbet-eraser", require: "t"`.
+```ruby
+Sorbet::Eraser.erase(source)
+```
+
+where `source` is a string that represents valid Ruby code.
+
+### Just in time
+
+If you're looking to avoid a build step like the one described above, you can instead erase your code immediately before it is compiled by the Ruby virtual machine. To do, call:
+
+```ruby
+require "sorbet/eraser/autoload"
+```
+
+as soon as possible when your application is first booting. This will hook into the autoload process to erase all `sorbet-runtime` code before it gets passed to Ruby to parse. Note that the tradeoff here is that it eliminates the need for a build step, but slows down your parse/boot time.
+
+### Runtime structures
+
+If you used any runtime structures like `T::Struct` or `T::Enum` you'll need a runtime shim. We provide very basic versions of these in the `sorbet-eraser` gem, and they are required automatically.
 
 ### Status
 
