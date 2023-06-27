@@ -150,20 +150,46 @@ module Sorbet
 
       # prop :foo, String
       # const :foo, String
-      class PropPattern < Pattern
+      class PropWithoutOptionsPattern < Pattern
         def replace(segment)
-          segment.gsub(/((?:prop|const)\s+:.+),(\s*)([^\n;,]+)(.*)/m) do
-            "#{$1} #{$2}#{blank($3)}#{$4}"
+          segment.dup.tap do |replacement|
+            range = metadata.fetch(:comma)..-1
+            replacement[range] = blank(replacement[range])
+          end
+        end
+      end
+
+      # prop :foo, String, default: ""
+      # const :foo, String, default: ""
+      class PropWithOptionsPattern < Pattern
+        def replace(segment)
+          segment.dup.tap do |replacement|
+            first_comma = metadata.fetch(:first_comma)
+            second_comma = metadata.fetch(:second_comma)
+
+            range = (first_comma + 1)..second_comma
+            replacement[range] = blank(replacement[range])
           end
         end
       end
 
       def on_command(ident, args_add_block)
         if ident.match?(/<@ident (?:const|prop)>/)
-          # prop :foo, String
-          # const :foo, String
-          if args_add_block.match?(/<args_add_block <args <symbol_literal <symbol <@ident .+>>> <.+> false>/)
-            patterns << PropPattern.new(ident.range.begin...args_add_block.range.end)
+          if args_add_block.match?(/<args_add_block <args <symbol_literal <symbol <@ident .+?>>> <.+> <bare_assoc_hash .+> false>/)
+            # prop :foo, String, default: ""
+            # const :foo, String, default: ""
+            patterns << PropWithOptionsPattern.new(
+              ident.range.begin..args_add_block.range.end,
+              first_comma: args_add_block.body[0].body[0].range.end - ident.range.begin,
+              second_comma: args_add_block.body[0].body[1].range.end - ident.range.begin
+            )
+          elsif args_add_block.match?(/<args_add_block <args <symbol_literal <symbol <@ident .+?>>> <.+> false>/)
+            # prop :foo, String
+            # const :foo, String
+            patterns << PropWithoutOptionsPattern.new(
+              ident.range.begin..args_add_block.range.end,
+              comma: args_add_block.body[0].body[0].range.end - ident.range.begin
+            )
           end
         end
 
@@ -178,7 +204,7 @@ module Sorbet
           if ident.match?(/<@ident (?:must|reveal_type|unsafe)>/) &&
             args_add_block.match?(/<args_add_block <args <.+>> false>/) &&
             args_add_block.body[0].body.length == 1
-            patterns << TMustNoParensPattern.new(var_ref.range.begin...args_add_block.range.end)
+            patterns << TMustNoParensPattern.new(var_ref.range.begin..args_add_block.range.end)
           end
         end
 

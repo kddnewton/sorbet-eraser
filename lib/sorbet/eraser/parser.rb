@@ -59,7 +59,7 @@ module Sorbet
         end
 
         def to_s
-          @to_s ||= "<#{event} #{body.map(&:to_s).join(" ")}>"
+          @to_s ||= "<#{event} #{body.map { |child| child.is_a?(Array) ? child.map(&:to_s) : child.to_s }.join(" ")}>"
         end
       end
 
@@ -108,11 +108,33 @@ module Sorbet
         line_counts[lineno - 1][column]
       end
 
+      def find_loc(args)
+        ranges = []
+
+        args.each do |arg|
+          case arg
+          when Node
+            ranges << arg.range if arg.range
+          when Array
+            ranges << find_loc(arg)
+          end
+        end
+
+        case ranges.length
+        when 0
+          nil
+        when 1
+          ranges.first
+        else
+          ranges.first.begin...ranges.last.end
+        end
+      end
+
       # Loop through all of the scanner events and define a basic method that
       # wraps everything into a node class.
       SCANNER_EVENTS.each do |event|
         define_method(:"on_#{event}") do |value|
-          range = loc.then { |start| start..(start + (value&.size || 0)) }
+          range = loc.then { |start| start...(start + (value&.size || 0)) }
           Node.new(:"@#{event}", [value], range)
         end
       end
@@ -122,11 +144,13 @@ module Sorbet
       # it's an _add method then just append to the array. If it's a normal
       # method, then create a new node and determine its bounds.
       PARSER_EVENT_TABLE.each do |event, arity|
+        next if %i[aref arg_paren].include?(event)
+
         if event =~ /\A(.+)_new\z/ && event != :assoc_new
           prefix = $1.to_sym
 
           define_method(:"on_#{event}") do
-            Node.new(prefix, [], loc.then { |start| start..start })
+            Node.new(prefix, [], nil)
           end
         elsif event =~ /_add\z/
           define_method(:"on_#{event}") do |node, value|
@@ -134,7 +158,7 @@ module Sorbet
               if node.body.empty?
                 value.range
               else
-                (node.range.begin..value.range.end)
+                (node.range.begin...value.range.end)
               end
 
             node.class.new(node.event, node.body + [value], range)
@@ -143,14 +167,22 @@ module Sorbet
           # skip this, as we're going to define it below
         else
           define_method(:"on_#{event}") do |*args|
-            first, *, last = args.grep(Node).map(&:range)
-
-            first ||= loc.then { |start| start..start }
-            last ||= first
-
-            Node.new(event, args, first.begin..[last.end, loc].max)
+            Node.new(event, args, find_loc(args))
           end
         end
+      end
+
+      # Better location information for aref.
+      def on_aref(recv, arg)
+        rend = arg.range.end + source[arg.range.end..].index("]") + 1
+        Node.new(:aref, [recv, arg], recv.range.begin...rend)
+      end
+
+      # Better location information for arg_paren.
+      def on_arg_paren(arg)
+        rbegin = source[..arg.range.begin].rindex("(")
+        rend = arg.range.end + source[arg.range.end..].index(")") + 1
+        Node.new(:arg_paren, [arg], rbegin...rend)
       end
 
       # Track the parsing errors for nicer error messages.

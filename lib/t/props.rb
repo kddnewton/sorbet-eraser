@@ -20,31 +20,37 @@ module T
       end
 
       def prop(name, rules = {})
-        create_prop(name)
-        attr_accessor name
+        create_prop(name, rules)
+        attr_accessor(name) unless rules[:without_accessors]
       end
 
       def const(name, rules = {})
-        create_prop(name)
-        attr_reader name
+        create_prop(name, rules)
+        attr_reader(name) unless rules[:without_accessors]
       end
 
       private
 
-      def create_prop(name)
-        props << name
-        props.sort!
+      def create_prop(name, rules)
+        props << [name, rules]
+        props.sort_by!(&:first)
       end
     end
 
     # Here we're going to check against the props that have been defined on the
     # class level and set appropriate values.
     def initialize(hash = {})
-      if self.class.props == hash.keys.sort
-        hash.each { |key, value| instance_variable_set("@#{key}", value) }
-      else
-        raise ArgumentError, "Expected keys #{self.class.props} but got #{hash.keys.sort}"
+      self.class.props.each do |name, rules|
+        if hash.key?(name)
+          instance_variable_set("@#{name}", hash.delete(name))
+        elsif rules.key?(:default)
+          instance_variable_set("@#{name}", rules[:default])
+        else
+          raise ArgumentError, "missing keyword: #{name}"
+        end
       end
+
+      raise ArgumentError, "unknown keyword: #{hash.keys.first}" unless hash.empty?
     end
 
     # This module is entirely empty because we haven't implemented anything from

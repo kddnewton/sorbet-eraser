@@ -6,7 +6,7 @@ module T
   class StructTest < Minitest::Test
     class TestStruct < Struct
       prop :prop1
-      prop :prop2
+      prop :prop2, without_accessors: true
       const :const1
       const :const2
     end
@@ -35,6 +35,12 @@ module T
       struct = TestStruct.new(prop1: 1, prop2: 2, const1: 3, const2: 4)
       struct.prop1 = 5
       assert_equal(5, struct.prop1)
+
+      # Check that we cannot set prop values if we don't have accessors.
+      assert_raises(NoMethodError) do
+        struct = TestStruct.new(prop1: 1, prop2: 2, const1: 3, const2: 4)
+        struct.prop2 = 5
+      end
     end
   end
 end
