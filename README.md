@@ -62,7 +62,12 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 | `T.type_alias { foo }`                              | ✅     | Shimmed     |
 | `T.unsafe(foo)`                                     | ✅     | `foo`       |
 
-In the above table:
+In the above table, for `Status`:
+
+* ✅ means that we are confident this is replaced 1:1.
+* 🛠 means there may be APIs that are not entirely supported. If you run into something that is missing, please open an issue.
+
+In the above table, for `Replacement`:
 
 * `Shimmed` means that this gem provides a replacement module that will simply do nothing when its respective methods are called. We do this in order to maintain the same interface in the case that someone is doing runtime reflection. Also because anything that is shimmed will not be called that much/will not be in a hot path so performance is not really a consideration for those cases.
 * `Removed` means that the construct is removed entirely from the source.
