@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "t/enum"
+require "t/props"
 require "t/struct"
 
 # For some constructs, it doesn't make as much sense to entirely remove them

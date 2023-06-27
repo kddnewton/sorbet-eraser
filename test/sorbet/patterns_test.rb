@@ -99,6 +99,20 @@ module Sorbet
         OUTPUT
       end
 
+      def test_t_struct
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          class Foo < T::Struct
+            prop :foo, String
+            const :bar, Integer
+          end
+        INPUT
+          class Foo < T::Struct
+            prop :foo        
+            const :bar         
+          end
+        OUTPUT
+      end
+
       private
 
       def assert_erases(input, output)

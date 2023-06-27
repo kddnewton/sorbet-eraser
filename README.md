@@ -50,7 +50,12 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 | `mixes_in_class_methods(*)`, `requires_ancestor(*)` | ✅     | Shimmed     |
 | `type_member(*)`, `type_template(*)`                | ✅     | Shimmed     |
 | `class Foo < T::Enum`                               | ✅     | Shimmed     |
+| `class Foo < T::InexactStruct`                      | 🛠     | Shimmed     |
 | `class Foo < T::Struct`                             | 🛠     | Shimmed     |
+| `class Foo < T::ImmutableStruct`                    | 🛠     | Shimmed     |
+| `include T::Props`                                  | 🛠     | Shimmed     |
+| `include T::Props::Serializable`                    | 🛠     | Shimmed     |
+| `include T::Props::Constructor`                     | 🛠     | Shimmed     |
 | `sig`                                               | ✅     | Removed     |
 | `T.absurd(foo)`                                     | ✅     | Shimmed     |
 | `T.assert_type!(foo, bar)`                          | ✅     | `foo`       |

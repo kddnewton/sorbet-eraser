@@ -89,6 +89,17 @@ module Sorbet
         end
       end
 
+      # T.must foo => foo
+      # T.reveal_type foo => foo
+      # T.unsafe foo => foo
+      class TMustNoParensPattern < Pattern
+        def replace(segment)
+          segment.gsub(/(T\s*\.(?:must|reveal_type|unsafe)\s*)(.+)/) do
+            "#{blank($1)}#{$2}"
+          end
+        end
+      end
+
       def on_method_add_arg(call, arg_paren)
         # T.must(foo)
         # T.reveal_type(foo)
@@ -137,15 +148,26 @@ module Sorbet
         super
       end
 
-      # T.must foo => foo
-      # T.reveal_type foo => foo
-      # T.unsafe foo => foo
-      class TMustNoParensPattern < Pattern
+      # prop :foo, String
+      # const :foo, String
+      class PropPattern < Pattern
         def replace(segment)
-          segment.gsub(/(T\s*\.(?:must|reveal_type|unsafe)\s*)(.+)/) do
-            "#{blank($1)}#{$2}"
+          segment.gsub(/((?:prop|const)\s+:.+),(\s*)([^\n;,]+)(.*)/m) do
+            "#{$1} #{$2}#{blank($3)}#{$4}"
           end
         end
+      end
+
+      def on_command(ident, args_add_block)
+        if ident.match?(/<@ident (?:const|prop)>/)
+          # prop :foo, String
+          # const :foo, String
+          if args_add_block.match?(/<args_add_block <args <symbol_literal <symbol <@ident .+>>> <.+> false>/)
+            patterns << PropPattern.new(ident.range.begin...args_add_block.range.end)
+          end
+        end
+
+        super
       end
 
       def on_command_call(var_ref, period, ident, args_add_block)
