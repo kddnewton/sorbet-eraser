@@ -27,17 +27,17 @@ Or install it yourself as:
 
 ## Usage
 
-Before any code is loaded that would require a `sorbet-runtime` construct, call `require "sorbet/eraser/autoload"`. This will hook into the autoload process to erase all `sorbet-runtime` code before it gets passed to Ruby to parse.
+There are two ways to use this gem, depending on your needs.
 
-Alternatively, you can programmatically use this gem through the `Sorbet::Eraser.erase(source)` API, where `source` is a string that represents valid Ruby code. Ruby code without the listed constructs will be returned.
+The first is that you can hook into the Ruby compilation process and do just-in-time erasure. To do this — before any code is loaded that would require a `sorbet-runtime` construct — call `require "sorbet/eraser/autoload"`. This will hook into the autoload process to erase all `sorbet-runtime` code before it gets passed to Ruby to parse. This eliminates the need for a build step, but slows down your parse/boot time.
 
-Finally, this gem ships with a CLI that you can use to modify source files. This is useful for development of this gem itself, but could be useful for others to ensure they see what this gem actually will be doing in production. To run it, run:
+The second is that you can preprocess your Ruby files using either the CLI or the Ruby API. With the CLI, you would run:
 
-```sh
+```bash
 bundle exec sorbet-eraser '**/*.rb'
 ```
 
-It accepts any number of filepaths/patterns on the command line and will modify the source files with their erased contents.
+It accepts any number of filepaths/patterns on the command line and will modify the source files with their erased contents.  Alternatively, you can programmatically use this gem through the `Sorbet::Eraser.erase(source)` API, where `source` is a string that represents valid Ruby code. Ruby code without the listed constructs will be returned.
 
 ### Status
 
