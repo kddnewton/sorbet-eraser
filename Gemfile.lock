@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    sorbet-eraser (0.2.0)
+    sorbet-eraser (0.3.0)
 
 GEM
   remote: https://rubygems.org/

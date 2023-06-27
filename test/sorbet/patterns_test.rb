@@ -5,7 +5,7 @@ require "test_helper"
 module Sorbet
   module Eraser
     class PatternsTest < Minitest::Test
-      def test_sig
+      def test_sig_braces
         assert_erases(<<-INPUT, <<-OUTPUT)
           def foo; end
 
@@ -15,6 +15,24 @@ module Sorbet
           def foo; end
 
                       
+          def bar; end
+        OUTPUT
+      end
+
+      def test_sig_keywords
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          def foo; end
+
+          sig do
+            void
+          end
+          def bar; end
+        INPUT
+          def foo; end
+
+                
+                
+             
           def bar; end
         OUTPUT
       end

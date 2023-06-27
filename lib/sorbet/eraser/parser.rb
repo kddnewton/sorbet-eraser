@@ -59,7 +59,10 @@ module Sorbet
         end
 
         def to_s
-          @to_s ||= "<#{event} #{body.map { |child| child.is_a?(Array) ? child.map(&:to_s) : child.to_s }.join(" ")}>"
+          @repr ||= begin
+            children = body.map { |child| child.is_a?(Array) ? child.map(&:to_s) : child }
+            "<#{event} #{children.join(" ")}>"
+          end
         end
       end
 
@@ -139,39 +142,6 @@ module Sorbet
         end
       end
 
-      # Loop through the parser events and generate a method for each event. If
-      # it's one of the _new methods, then use arrays like SexpBuilderPP. If
-      # it's an _add method then just append to the array. If it's a normal
-      # method, then create a new node and determine its bounds.
-      PARSER_EVENT_TABLE.each do |event, arity|
-        next if %i[aref arg_paren].include?(event)
-
-        if event =~ /\A(.+)_new\z/ && event != :assoc_new
-          prefix = $1.to_sym
-
-          define_method(:"on_#{event}") do
-            Node.new(prefix, [], nil)
-          end
-        elsif event =~ /_add\z/
-          define_method(:"on_#{event}") do |node, value|
-            range =
-              if node.body.empty?
-                value.range
-              else
-                (node.range.begin...value.range.end)
-              end
-
-            node.class.new(node.event, node.body + [value], range)
-          end
-        elsif event == :parse_error
-          # skip this, as we're going to define it below
-        else
-          define_method(:"on_#{event}") do |*args|
-            Node.new(event, args, find_loc(args))
-          end
-        end
-      end
-
       # Better location information for aref.
       def on_aref(recv, arg)
         rend = arg.range.end + source[arg.range.end..].index("]") + 1
@@ -192,9 +162,49 @@ module Sorbet
         Node.new(:brace_block, [params, body], rbegin...rend)
       end
 
+      # Better location information for do_block.
+      def on_do_block(params, body)
+        rbegin = source[...(params || body).range.begin].rindex("do")
+        rend = body.range.end + source[body.range.end..].index("end") + 3
+        Node.new(:do_block, [params, body], rbegin...rend)
+      end
+
       # Track the parsing errors for nicer error messages.
       def on_parse_error(error)
         errors << "line #{lineno}: #{error}"
+      end
+
+      # Loop through the parser events and generate a method for each event. If
+      # it's one of the _new methods, then use arrays like SexpBuilderPP. If
+      # it's an _add method then just append to the array. If it's a normal
+      # method, then create a new node and determine its bounds.
+      handled = private_instance_methods(false)
+
+      PARSER_EVENT_TABLE.each do |event, arity|
+        next if handled.include?(:"on_#{event}")
+
+        if event =~ /\A(.+)_new\z/ && event != :assoc_new
+          prefix = $1.to_sym
+
+          define_method(:"on_#{event}") do
+            Node.new(prefix, [], nil)
+          end
+        elsif event =~ /_add\z/
+          define_method(:"on_#{event}") do |node, value|
+            range =
+              if node.body.empty?
+                value.range
+              else
+                (node.range.begin...value.range.end)
+              end
+
+            node.class.new(node.event, node.body + [value], range)
+          end
+        else
+          define_method(:"on_#{event}") do |*args|
+            Node.new(event, args, find_loc(args))
+          end
+        end
       end
     end
   end

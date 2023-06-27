@@ -101,55 +101,40 @@ module Sorbet
       end
 
       def on_method_add_arg(call, arg_paren)
-        # T.must(foo)
-        # T.reveal_type(foo)
-        # T.unsafe(foo)
-        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident (?:must|reveal_type|unsafe)>>/) &&
-          arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
+        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident (?:must|reveal_type|unsafe)>>/) && arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
+          # T.must(foo)
+          # T.reveal_type(foo)
+          # T.unsafe(foo)
           patterns << TOneArgMethodCallParensPattern.new(call.range.begin...arg_paren.range.end)
-        end
-
-        # T.assert_type!(foo, bar)
-        # T.cast(foo, bar)
-        # T.let(foo, bar)
-        if call.match?(/\A<call <var_ref <@const T>> <@period \.> <@ident (?:assert_type!|cast|let)>>\z/) &&
-          arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
-          patterns <<
-            TTwoArgMethodCallParensPattern.new(
-              call.range.begin...arg_paren.range.end,
-              comma: arg_paren.body[0].body[0].body[0].range.end - call.range.begin
-            )
-        end
-
-        # T.bind(self, foo)
-        if call.match?(/<call <var_ref <@const T>> <@period \.> <@ident bind>>/) &&
-          arg_paren.match?(/<arg_paren <args_add_block <args <var_ref <@kw self>> .+> false>>/)
-          patterns <<
-            TTwoArgMethodCallParensPattern.new(
-              call.range.begin...arg_paren.range.end,
-              comma: arg_paren.body[0].body[0].body[0].range.end - call.range.begin
-            )
-        end
-
-        # abstract!
-        # final!
-        # interface!
-        if call.match?(/<fcall <@ident (?:abstract|final|interface)!>>/) &&
-          arg_paren.match?("<args >")
+        elsif call.match?(/\A<call <var_ref <@const T>> <@period \.> <@ident (?:assert_type!|cast|let)>>\z/) && arg_paren.match?(/<arg_paren <args_add_block <args .+> false>>/)
+          # T.assert_type!(foo, bar)
+          # T.cast(foo, bar)
+          # T.let(foo, bar)
+          patterns << TTwoArgMethodCallParensPattern.new(
+            call.range.begin...arg_paren.range.end,
+            comma: arg_paren.body[0].body[0].body[0].range.end - call.range.begin
+          )
+        elsif call.match?(/<call <var_ref <@const T>> <@period \.> <@ident bind>>/) && arg_paren.match?(/<arg_paren <args_add_block <args <var_ref <@kw self>> .+> false>>/)
+          # T.bind(self, foo)
+          patterns << TTwoArgMethodCallParensPattern.new(
+            call.range.begin...arg_paren.range.end,
+            comma: arg_paren.body[0].body[0].body[0].range.end - call.range.begin
+          )
+        elsif call.match?(/<fcall <@ident (?:abstract|final|interface)!>>/) && arg_paren.match?("<args >")
+          # abstract!
+          # final!
+          # interface!
           patterns << DeclarationPattern.new(call.range.begin...arg_paren.range.end)
-        end
-
-        # mixes_in_class_methods(foo)
-        if call.match?("<fcall <@ident mixes_in_class_methods>>") &&
-          arg_paren.match?(/<arg_paren <args_add_block <args <.+>>> false>>/)
+        elsif call.match?("<fcall <@ident mixes_in_class_methods>>") && arg_paren.match?(/<arg_paren <args_add_block <args <.+>>> false>>/)
+          # mixes_in_class_methods(foo)
           patterns << MixesInClassMethodsPattern.new(call.range.begin...arg_paren.range.end)
         end
 
         super
       end
 
-      # prop :foo, String
-      # const :foo, String
+      # prop :foo, String => prop :foo
+      # const :foo, String => const :foo
       class PropWithoutOptionsPattern < Pattern
         def replace(segment)
           segment.dup.tap do |replacement|
@@ -159,8 +144,8 @@ module Sorbet
         end
       end
 
-      # prop :foo, String, default: ""
-      # const :foo, String, default: ""
+      # prop :foo, String, default: "" => prop :foo, default: ""
+      # const :foo, String, default: "" => const :foo, default: ""
       class PropWithOptionsPattern < Pattern
         def replace(segment)
           segment.dup.tap do |replacement|
@@ -197,15 +182,11 @@ module Sorbet
       end
 
       def on_command_call(var_ref, period, ident, args_add_block)
-        if var_ref.match?("<var_ref <@const T>>") && period.match?("<@period .>")
+        if var_ref.match?("<var_ref <@const T>>") && period.match?("<@period .>") && ident.match?(/<@ident (?:must|reveal_type|unsafe)>/) && args_add_block.match?(/<args_add_block <args <.+>> false>/) && args_add_block.body[0].body.length == 1
           # T.must foo
           # T.reveal_type foo
           # T.unsafe foo
-          if ident.match?(/<@ident (?:must|reveal_type|unsafe)>/) &&
-            args_add_block.match?(/<args_add_block <args <.+>> false>/) &&
-            args_add_block.body[0].body.length == 1
-            patterns << TMustNoParensPattern.new(var_ref.range.begin..args_add_block.range.end)
-          end
+          patterns << TMustNoParensPattern.new(var_ref.range.begin..args_add_block.range.end)
         end
 
         super
@@ -220,10 +201,22 @@ module Sorbet
         end
       end
 
+      # sig do foo end =>
+      class SigBlockPattern < Pattern
+        def replace(segment)
+          segment.gsub(/(sig\s*do.+end)(.*)/m) do
+            "#{blank($1)}#{$2}"
+          end
+        end
+      end
+
       def on_stmts_add(node, value)
-        # sig { foo }
         if value.match?(/<method_add_block <method_add_arg <fcall <@ident sig>> <args >> <brace_block  <stmts .+>>>/)
+          # sig { foo }
           patterns << SigBracesPattern.new(value.range)
+        elsif value.match?(/<method_add_block <method_add_arg <fcall <@ident sig>> <args >> <do_block  <bodystmt .+>>>/)
+          # sig do foo end
+          patterns << SigBlockPattern.new(value.range)
         end
 
         super
