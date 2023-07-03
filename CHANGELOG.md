@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
+## [0.4.0] - 2023-07-03
+
 ### Added
 
 - `require "t"` now requires a file that only requires `"sorbet/eraser/t"`, so they are effectively the same thing. If you're in a situation where you need to load a different `"t"`, then you can manually require `"sorbet/eraser/t"` and it should work.
@@ -39,7 +41,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 - Require MFA for releasing.
 
-[unreleased]: https://github.com/kddnewton/sorbet-eraser/compare/v0.3.0...HEAD
+[unreleased]: https://github.com/kddnewton/sorbet-eraser/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/kddnewton/sorbet-eraser/compare/v0.3.1...v0.4.0
+[0.3.1]: https://github.com/kddnewton/sorbet-eraser/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/kddnewton/sorbet-eraser/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/kddnewton/sorbet-eraser/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/kddnewton/sorbet-eraser/compare/f6a712...v0.1.1
