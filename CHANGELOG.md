@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
+### Added
+
+- `require "t"` now requires a file that only requires `"sorbet/eraser/t"`, so they are effectively the same thing. If you're in a situation where you need to load a different `"t"`, then you can manually require `"sorbet/eraser/t"` and it should work.
+
 ## [0.3.1] - 2023-06-27
 
 ### Added
