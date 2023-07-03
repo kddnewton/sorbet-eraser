@@ -86,7 +86,7 @@ module Sorbet
             @line_counts << MultiByteString.new(last_index, line)
           end
 
-          last_index += line.size
+          last_index += line.bytesize
         end
 
         @errors = []
@@ -213,7 +213,7 @@ module Sorbet
       # Track the open heredocs so we can replace the string literal ranges with
       # the range of their declarations.
       def on_heredoc_beg(value)
-        range = loc.then { |start| start...(start + value.size) }
+        range = loc.then { |start| start...(start + value.bytesize) }
         heredocs << [range, value, nil]
 
         Node.new(:@heredoc_beg, [value], range)
@@ -222,7 +222,7 @@ module Sorbet
       # If a heredoc ends, then the next string literal event will be the
       # heredoc.
       def on_heredoc_end(value)
-        range = loc.then { |start| start...(start + value.size) }
+        range = loc.then { |start| start...(start + value.bytesize) }
         heredocs.find { |(_, beg_arg, end_arg)| beg_arg.include?(value.strip) && end_arg.nil? }[2] = value
 
         Node.new(:@heredoc_end, [value], range)
@@ -251,7 +251,7 @@ module Sorbet
         next if handled.include?(:"on_#{event}")
 
         define_method(:"on_#{event}") do |value|
-          range = loc.then { |start| start...(start + (value&.size || 0)) }
+          range = loc.then { |start| start...(start + (value&.bytesize || 0)) }
           Node.new(:"@#{event}", [value], range)
         end
       end
