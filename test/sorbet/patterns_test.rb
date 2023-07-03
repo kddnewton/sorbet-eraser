@@ -5,6 +5,14 @@ require "test_helper"
 module Sorbet
   module Eraser
     class PatternsTest < Minitest::Test
+      def test_typed_comments
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          # typed: true
+        INPUT
+          # typed: ignore
+        OUTPUT
+      end
+
       def test_sig_braces
         assert_erases(<<-INPUT, <<-OUTPUT)
           def foo; end
