@@ -6,11 +6,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
-## [0.4.1] - 2023-07-13
+## [0.5.0] - 2023-07-13
 
 ### Added
 
-- Also replace `typed: strict` comments with `typed: ignore`.
+- Replace `typed: strict` comments with empty comments.
+- Add a `--verify` option to the CLI to ensure output is valid Ruby.
+- Enhance `sorbet/eraser/autoload` to hook into `load_iseq` even if bootsnap is not present.
 
 ## [0.4.0] - 2023-07-03
 

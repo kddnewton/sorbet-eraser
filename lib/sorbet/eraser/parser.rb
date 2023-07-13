@@ -136,18 +136,18 @@ module Sorbet
 
       # Better location information for aref.
       def on_aref(recv, arg)
-        rend = arg.range.end + source[arg.range.end..].index("]") + 1
+        rend = arg.range.end + source.byteslice(arg.range.end..).index("]") + 1
         Node.new(:aref, [recv, arg], recv.range.begin...rend)
       end
 
       # Better location information for arg_paren.
       def on_arg_paren(arg)
         if arg
-          rbegin = source[..arg.range.begin].rindex("(")
-          rend = arg.range.end + source[arg.range.end..].index(")") + 1
+          rbegin = source.byteslice(..arg.range.begin).rindex("(")
+          rend = arg.range.end + source.byteslice(arg.range.end..).index(")") + 1
           Node.new(:arg_paren, [arg], rbegin...rend)
         else
-          segment = source[..loc]
+          segment = source.byteslice(..loc)
           Node.new(:arg_paren, [arg], segment.rindex("(")...(segment.rindex(")") + 1))
         end
       end
@@ -159,11 +159,11 @@ module Sorbet
       def on_array(arg)
         case arg&.event
         when nil
-          segment = source[..loc]
+          segment = source.byteslice(..loc)
           Node.new(:array, [arg], segment.rindex("[")...(segment.rindex("]") + 1))
         when :qsymbols, :qwords, :symbols, :words
-          rbegin = source[...arg.range.begin].rindex(LISTS.fetch(arg.event))
-          rend = source[arg.range.end..].index(TERMINATORS.fetch(source[rbegin + 2]) { source[rbegin + 2] }) + arg.range.end + 1
+          rbegin = source.byteslice(...arg.range.begin).rindex(LISTS.fetch(arg.event))
+          rend = source.byteslice(arg.range.end..).index(TERMINATORS.fetch(source.byteslice(rbegin + 2)) { source.byteslice(rbegin + 2) }) + arg.range.end + 1
           Node.new(:array, [arg], rbegin...rend)
         else
           Node.new(:array, [arg], arg.range)
@@ -173,14 +173,14 @@ module Sorbet
       # Better location information for brace_block.
       def on_brace_block(params, body)
         if params || body.range
-          rbegin = source[...(params || body).range.begin].rindex("{")
+          rbegin = source.byteslice(...(params || body).range.begin).rindex("{")
 
           rend = body.range&.end || params.range.end
-          rend = rend + source[rend..].index("}") + 1
+          rend = rend + source.byteslice(rend..).index("}") + 1
 
           Node.new(:brace_block, [params, body], rbegin...rend)
         else
-          segment = source[..loc]
+          segment = source.byteslice(..loc)
           Node.new(:brace_block, [params, body], segment.rindex("{")...(segment.rindex("}") + 1))
         end
       end
@@ -188,14 +188,14 @@ module Sorbet
       # Better location information for do_block.
       def on_do_block(params, body)
         if params || body.range
-          rbegin = source[...(params || body).range.begin].rindex("do")
+          rbegin = source.byteslice(...(params || body).range.begin).rindex("do")
 
           rend = body.range&.end || params.range.end
-          rend = rend + source[rend..].index("end") + 3
+          rend = rend + source.byteslice(rend..).index("end") + 3
 
           Node.new(:do_block, [params, body], rbegin...rend)
         else
-          segment = source[..loc]
+          segment = source.byteslice(..loc)
           Node.new(:do_block, [params, body], segment.rindex("do")...(segment.rindex("end") + 3))
         end
       end
@@ -205,7 +205,7 @@ module Sorbet
         if arg
           Node.new(:hash, [arg], arg.range)
         else
-          segment = source[..loc]
+          segment = source.byteslice(..loc)
           Node.new(:hash, [arg], segment.rindex("{")...(segment.rindex("}") + 1))
         end
       end

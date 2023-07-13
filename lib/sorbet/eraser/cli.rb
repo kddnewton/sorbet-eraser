@@ -7,9 +7,10 @@ module Sorbet
     class CLI
       POOL_SIZE = 4
 
-      attr_reader :filepaths
+      attr_reader :verify, :filepaths
 
-      def initialize(filepaths)
+      def initialize(verify, filepaths)
+        @verify = verify
         @filepaths = filepaths
       end
 
@@ -28,20 +29,36 @@ module Sorbet
                 break if filepath == :eoq
                 process(filepath)
               end
-            end
+            end.tap { |thread| thread.abort_on_exception = true }
           end
 
         workers.each(&:join)
       end
 
       def self.start(argv)
-        new(argv.flat_map { |pattern| Dir.glob(pattern) }).start
+        verify = false
+
+        if argv.first == "--verify"
+          verify = true
+          argv.shift
+        end
+
+        filepaths = []
+        argv.each { |pattern| filepaths.concat(Dir.glob(pattern)) }
+
+        new(verify, filepaths).start
       end
 
       private
 
       def process(filepath)
-        File.write(filepath, Eraser.erase(File.read(filepath)))
+        contents = Eraser.erase(File.read(filepath))
+
+        if verify && Ripper.sexp_raw(contents).nil?
+          warn("Internal error while parsing #{filepath}")
+        else
+          File.write(filepath, contents)
+        end
       rescue Parser::ParsingError => error
         warn("Could not parse #{filepath}: #{error}")
       rescue => error
