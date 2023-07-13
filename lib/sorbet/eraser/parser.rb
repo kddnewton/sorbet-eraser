@@ -239,7 +239,7 @@ module Sorbet
         if heredoc = heredocs.find { |(_, _, end_arg)| end_arg }
           Node.new(:string_literal, [arg], heredocs.delete(heredoc)[0])
         else
-          Node.new(:string_literal, [arg], arg.range)
+          Node.new(:string_literal, [arg], (arg.range.begin - 1)...(arg.range.end + 1))
         end
       end
 

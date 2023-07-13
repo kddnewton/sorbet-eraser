@@ -57,11 +57,11 @@ module Sorbet
           # We can't really rely on regex here because commas have semantic
           # meaning and you might have some in the value of the first argument.
           comma = metadata.fetch(:comma)
-          pre, post = 0..comma, (comma + 1)..-1
+          pre, post = 0...comma, comma..-1
 
           replacement[pre] =
-            replacement[pre].gsub(/(T\s*\.(?:assert_type!|bind|cast|let)\(\s*)(.+)(\s*,)(.*)/m) do
-              "#{blank($1)}#{$2}#{blank($3)}#{$4}"
+            replacement[pre].gsub(/(T\s*\.(?:assert_type!|bind|cast|let)\(\s*)(.+)/m) do
+              "#{blank($1)}#{$2}"
             end
 
           replacement[post] = blank(replacement[post])

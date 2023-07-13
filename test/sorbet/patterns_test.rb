@@ -6,11 +6,11 @@ module Sorbet
   module Eraser
     class PatternsTest < Minitest::Test
       def test_typed_comments
-        [:ignore,:false,:true,:strict,:strong].each do |mode|
+        %i[ignore false true strict strong].each do |mode|
           assert_erases(<<-INPUT, <<-OUTPUT)
             # typed: #{mode}
           INPUT
-            # typed: ignore
+                     #{" " * mode.length}
           OUTPUT
         end
       end
@@ -76,6 +76,12 @@ module Sorbet
           foo = T.let(bar, String)
         INPUT
           foo =       bar         
+        OUTPUT
+
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          T.let("World!", String)
+        INPUT
+                "World!"         
         OUTPUT
       end
 
