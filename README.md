@@ -27,7 +27,7 @@ end
 will be transformed into
 
 ```ruby
-             
+# typed: ignore
 
 class HelloWorld
                
