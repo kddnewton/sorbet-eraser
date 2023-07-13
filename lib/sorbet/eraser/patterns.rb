@@ -103,10 +103,11 @@ module Sorbet
       # typed: ignore
       # typed: false
       # typed: true
+      # typed: strict
       # typed: strong
       class TypedCommentPattern < Pattern
         def replace(segment)
-          segment.gsub(/(\A#\s*typed:\s*)(?:ignore|false|true|strong)(\s*)\z/) do
+          segment.gsub(/(\A#\s*typed:\s*)(?:ignore|false|true|strict|strong)(\s*)\z/) do
             "#{$1}ignore#{$2}"
           end
         end
@@ -114,10 +115,11 @@ module Sorbet
 
       def on_comment(comment)
         super.tap do |node|
-          if lineno == 1 && comment.match?(/\A#\s*typed:\s*(?:ignore|false|true|strong)\s*\z/)
+          if lineno == 1 && comment.match?(/\A#\s*typed:\s*(?:ignore|false|true|strict|strong)\s*\z/)
             # typed: ignore
             # typed: false
             # typed: true
+            # typed: strict
             # typed: strong
             patterns << TypedCommentPattern.new(node.range)
           end

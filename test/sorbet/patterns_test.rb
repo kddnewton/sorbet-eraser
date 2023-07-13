@@ -6,11 +6,13 @@ module Sorbet
   module Eraser
     class PatternsTest < Minitest::Test
       def test_typed_comments
-        assert_erases(<<-INPUT, <<-OUTPUT)
-          # typed: true
-        INPUT
-          # typed: ignore
-        OUTPUT
+        [:ignore,:false,:true,:strict,:strong].each do |mode|
+          assert_erases(<<-INPUT, <<-OUTPUT)
+            # typed: #{mode}
+          INPUT
+            # typed: ignore
+          OUTPUT
+        end
       end
 
       def test_sig_braces
