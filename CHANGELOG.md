@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 ### Added
 
 - Replace `typed: strict` comments with empty comments.
+- Replace all `typed:` sigil comments with empty comments instead of `typed: ignore`. Do this because `typed: ignore` longer than other options, which can cause issues with byte ranges, and violates an assumption by this gem that it is only erasing, not adding content.
 - Add a `--verify` option to the CLI to ensure output is valid Ruby.
 - Enhance `sorbet/eraser/autoload` to hook into `load_iseq` even if bootsnap is not present.
 

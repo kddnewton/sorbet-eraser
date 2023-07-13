@@ -10,7 +10,7 @@ module Sorbet
           assert_erases(<<-INPUT, <<-OUTPUT)
             # typed: #{mode}
           INPUT
-                     #{" " * mode.length}
+            #        #{" " * mode.length}
           OUTPUT
         end
       end

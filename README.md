@@ -27,7 +27,7 @@ end
 will be transformed into
 
 ```ruby
-# typed: ignore
+#
 
 class HelloWorld
                
@@ -95,30 +95,30 @@ If you used any runtime structures like `T::Struct` or `T::Enum` you'll need a r
 
 Below is a table of the status of each `sorbet-runtime` construct and its current support status.
 
-| Construct                                           | Status | Replacement       |
-| --------------------------------------------------- | ------ | ----------------- |
-| `# typed: foo`                                      | ✅     | `# typed: ignore` |
-| `extend T::*`                                       | ✅     | Shimmed           |
-| `abstract!`, `final!`, `interface!`, `sealed!`      | ✅     | Shimmed           |
-| `mixes_in_class_methods(*)`, `requires_ancestor(*)` | ✅     | Shimmed           |
-| `type_member(*)`, `type_template(*)`                | ✅     | Shimmed           |
-| `class Foo < T::Enum`                               | ✅     | Shimmed           |
-| `class Foo < T::InexactStruct`                      | 🛠     | Shimmed           |
-| `class Foo < T::Struct`                             | 🛠     | Shimmed           |
-| `class Foo < T::ImmutableStruct`                    | 🛠     | Shimmed           |
-| `include T::Props`                                  | 🛠     | Shimmed           |
-| `include T::Props::Serializable`                    | 🛠     | Shimmed           |
-| `include T::Props::Constructor`                     | 🛠     | Shimmed           |
-| `sig`                                               | ✅     | Removed           |
-| `T.absurd(foo)`                                     | ✅     | Shimmed           |
-| `T.assert_type!(foo, bar)`                          | ✅     | `foo`             |
-| `T.bind(self, foo)`                                 | ✅     | `self`            |
-| `T.cast(foo, bar)`                                  | ✅     | `foo`             |
-| `T.let(foo, bar)`                                   | ✅     | `foo`             |
-| `T.must(foo)`                                       | ✅     | `foo`             |
-| `T.reveal_type(foo)`                                | ✅     | `foo`             |
-| `T.type_alias { foo }`                              | ✅     | Shimmed           |
-| `T.unsafe(foo)`                                     | ✅     | `foo`             |
+| Construct                                           | Status | Replacement |
+| --------------------------------------------------- | ------ | ----------- |
+| `# typed: foo`                                      | ✅      | `#        ` |
+| `extend T::*`                                       | ✅      | Shimmed     |
+| `abstract!`, `final!`, `interface!`, `sealed!`      | ✅      | Shimmed     |
+| `mixes_in_class_methods(*)`, `requires_ancestor(*)` | ✅      | Shimmed     |
+| `type_member(*)`, `type_template(*)`                | ✅      | Shimmed     |
+| `class Foo < T::Enum`                               | ✅      | Shimmed     |
+| `class Foo < T::InexactStruct`                      | 🛠      | Shimmed     |
+| `class Foo < T::Struct`                             | 🛠      | Shimmed     |
+| `class Foo < T::ImmutableStruct`                    | 🛠      | Shimmed     |
+| `include T::Props`                                  | 🛠      | Shimmed     |
+| `include T::Props::Serializable`                    | 🛠      | Shimmed     |
+| `include T::Props::Constructor`                     | 🛠      | Shimmed     |
+| `sig`                                               | ✅      | Removed     |
+| `T.absurd(foo)`                                     | ✅      | Shimmed     |
+| `T.assert_type!(foo, bar)`                          | ✅      | `foo`       |
+| `T.bind(self, foo)`                                 | ✅      | `self`      |
+| `T.cast(foo, bar)`                                  | ✅      | `foo`       |
+| `T.let(foo, bar)`                                   | ✅      | `foo`       |
+| `T.must(foo)`                                       | ✅      | `foo`       |
+| `T.reveal_type(foo)`                                | ✅      | `foo`       |
+| `T.type_alias { foo }`                              | ✅      | Shimmed     |
+| `T.unsafe(foo)`                                     | ✅      | `foo`       |
 
 In the above table, for `Status`:
 
