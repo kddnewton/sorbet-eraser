@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
+## [0.4.1] - 2023-07-13
+
+### Added
+
+- Also replace `typed: strict` comments with `typed: ignore`.
+
 ## [0.4.0] - 2023-07-03
 
 ### Added
@@ -41,7 +47,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 - Require MFA for releasing.
 
-[unreleased]: https://github.com/kddnewton/sorbet-eraser/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/kddnewton/sorbet-eraser/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/kddnewton/sorbet-eraser/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/kddnewton/sorbet-eraser/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/kddnewton/sorbet-eraser/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/kddnewton/sorbet-eraser/compare/v0.2.0...v0.3.0
