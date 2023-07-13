@@ -100,15 +100,15 @@ module Sorbet
         end
       end
 
-      # typed: ignore
-      # typed: false
-      # typed: true
-      # typed: strict
-      # typed: strong
+      # typed: ignore =>
+      # typed: false =>
+      # typed: true =>
+      # typed: strict =>
+      # typed: strong =>
       class TypedCommentPattern < Pattern
         def replace(segment)
-          segment.gsub(/(\A#\s*typed:\s*)(?:ignore|false|true|strict|strong)(\s*)\z/) do
-            "#{$1}ignore#{$2}"
+          segment.gsub(/(\A#\s*typed:\s*(?:ignore|false|true|strict|strong)(\s*))\z/) do
+            blank($1)
           end
         end
       end
