@@ -27,10 +27,10 @@ end
 will be transformed into
 
 ```ruby
-#
+#            
 
 class HelloWorld
-               
+  extend T::Sig
 
                          
   def hello
@@ -39,7 +39,7 @@ class HelloWorld
 end
 ```
 
-Notice that the `extend T::Sig` and `sig` constructs have been removed from your source code. Notice also that all line and column information has been preserved 1:1, so that stack traces and tracepoints will still be accurate.
+The `sig` method calls have been removed from your source code. `T::Sig` has been left in place, but is shimmed with an empty module to ensure any reflection is consistent. All line and column information has been preserved 1:1, so that stack traces and tracepoints will still be accurate.
 
 ## Installation
 
