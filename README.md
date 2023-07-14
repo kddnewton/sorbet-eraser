@@ -97,7 +97,7 @@ Below is a table of the status of each `sorbet-runtime` construct and its curren
 
 | Construct                                           | Status | Replacement |
 | --------------------------------------------------- | ------ | ----------- |
-| `# typed: foo`                                      | ✅      | `#        ` |
+| `# typed: foo`                                      | ✅      | `#`         |
 | `extend T::*`                                       | ✅      | Shimmed     |
 | `abstract!`, `final!`, `interface!`, `sealed!`      | ✅      | Shimmed     |
 | `mixes_in_class_methods(*)`, `requires_ancestor(*)` | ✅      | Shimmed     |
