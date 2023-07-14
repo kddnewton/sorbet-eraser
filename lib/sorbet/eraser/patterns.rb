@@ -13,11 +13,7 @@ module Sorbet
         end
 
         def erase(source)
-          encoding = source.encoding
-          source.force_encoding(Encoding::ASCII_8BIT)
-
-          source[range] = replace(source[range])
-          source.force_encoding(encoding)
+          source.bytesplice(range, replace(source.byteslice(range)))
         end
 
         def blank(segment)
