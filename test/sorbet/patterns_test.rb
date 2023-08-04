@@ -141,6 +141,28 @@ module Sorbet
         OUTPUT
       end
 
+      def test_method_requiring_parens
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          foo = T.cast(1 + 2, Integer)
+        INPUT
+          foo =       (1 + 2         )
+        OUTPUT
+      end
+
+      def test_method_multiple_lines
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          foo = T.cast(
+            1 + 2,
+            Integer
+          )
+        INPUT
+          foo =       (
+            1 + 2 
+                   
+          )
+        OUTPUT
+      end
+
       def test_t_struct
         assert_erases(<<-INPUT, <<-OUTPUT)
           class Foo < T::Struct
