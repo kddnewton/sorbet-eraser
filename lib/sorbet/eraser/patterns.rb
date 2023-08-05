@@ -33,8 +33,8 @@ module Sorbet
       # T.unsafe(foo) => foo
       class TOneArgMethodCallParensPattern < Pattern
         def replace(segment)
-          segment.gsub(/(T\s*\.(?:must|reveal_type|unsafe)\(\s*)(.+)(\s*\))(.*)/m) do
-            "#{blank($1)}#{$2}#{blank($3)}#{$4}"
+          segment.gsub(/(T\s*\.(?:must|reveal_type|unsafe))(\(\s*.+\s*\))(.*)/m) do
+            "#{blank($1)}#{$2}#{$3}"
           end
         end
       end
@@ -53,11 +53,14 @@ module Sorbet
           pre, post = 0...comma, comma..-1
 
           replacement[pre] =
-            replacement[pre].gsub(/(T\s*\.(?:assert_type!|bind|cast|let)\(\s*)(.+)/m) do
+            replacement[pre].gsub(/(T\s*\.(?:assert_type!|bind|cast|let))(\(\s*.+)/m) do
               "#{blank($1)}#{$2}"
             end
 
-          replacement[post] = blank(replacement[post])
+          replacement[post] =
+            replacement[post].gsub(/(.+)\)/m) do
+              "#{blank($1)})"
+            end
           replacement
         end
       end

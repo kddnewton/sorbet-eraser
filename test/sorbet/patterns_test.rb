@@ -51,7 +51,7 @@ module Sorbet
         assert_erases(<<-INPUT, <<-OUTPUT)
           foo = T.assert_type!(bar, String)
         INPUT
-          foo =                bar         
+          foo =               (bar        )
         OUTPUT
       end
 
@@ -59,7 +59,7 @@ module Sorbet
         assert_erases(<<-INPUT, <<-OUTPUT)
           foo = T.bind(self, String)
         INPUT
-          foo =        self         
+          foo =       (self        )
         OUTPUT
       end
 
@@ -67,7 +67,7 @@ module Sorbet
         assert_erases(<<-INPUT, <<-OUTPUT)
           foo = T.cast(bar, String)
         INPUT
-          foo =        bar         
+          foo =       (bar        )
         OUTPUT
       end
 
@@ -75,13 +75,13 @@ module Sorbet
         assert_erases(<<-INPUT, <<-OUTPUT)
           foo = T.let(bar, String)
         INPUT
-          foo =       bar         
+          foo =      (bar        )
         OUTPUT
 
         assert_erases(<<-INPUT, <<-OUTPUT)
           T.let("World!", String)
         INPUT
-                "World!"         
+               ("World!"        )
         OUTPUT
       end
 
@@ -89,7 +89,7 @@ module Sorbet
         assert_erases(<<-INPUT, <<-OUTPUT)
           KEYWORDS = T.let(%w[__FILE__ __LINE__ alias and begin BEGIN break case class def defined? do else elsif end END ensure false for if in module next nil not or redo rescue retry return self super then true undef unless until when while yield], T::Array[String])
         INPUT
-          KEYWORDS =       %w[__FILE__ __LINE__ alias and begin BEGIN break case class def defined? do else elsif end END ensure false for if in module next nil not or redo rescue retry return self super then true undef unless until when while yield]                   
+          KEYWORDS =      (%w[__FILE__ __LINE__ alias and begin BEGIN break case class def defined? do else elsif end END ensure false for if in module next nil not or redo rescue retry return self super then true undef unless until when while yield]                  )
         OUTPUT
       end
 
@@ -97,7 +97,7 @@ module Sorbet
         assert_erases(<<-INPUT, <<-OUTPUT)
           foo = T.must(bar)
         INPUT
-          foo =        bar 
+          foo =       (bar)
         OUTPUT
       end
 
@@ -113,7 +113,7 @@ module Sorbet
         assert_erases(<<-INPUT, <<-OUTPUT)
           T.reveal_type(foo)
         INPUT
-                        foo 
+                       (foo)
         OUTPUT
       end
 
@@ -129,7 +129,7 @@ module Sorbet
         assert_erases(<<-INPUT, <<-OUTPUT)
           T.unsafe(foo)
         INPUT
-                   foo 
+                  (foo)
         OUTPUT
       end
 
@@ -138,6 +138,28 @@ module Sorbet
           foo = T.unsafe bar
         INPUT
           foo =          bar
+        OUTPUT
+      end
+
+      def test_method_requiring_parens
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          foo = T.cast(1 + 2, Integer)
+        INPUT
+          foo =       (1 + 2         )
+        OUTPUT
+      end
+
+      def test_method_multiple_lines
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          foo = T.cast(
+            1 + 2,
+            Integer
+          )
+        INPUT
+          foo =       (
+            1 + 2 
+                   
+          )
         OUTPUT
       end
 
