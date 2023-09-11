@@ -163,6 +163,70 @@ module Sorbet
         OUTPUT
       end
 
+      def test_abstract
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          abstract!
+        INPUT
+                   
+        OUTPUT
+      end
+
+      def test_abstract_parens
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          abstract!()
+        INPUT
+                     
+        OUTPUT
+      end
+
+      def test_final
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          final!
+        INPUT
+                
+        OUTPUT
+      end
+
+      def test_final_parens
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          final!()
+        INPUT
+                  
+        OUTPUT
+      end
+
+      def test_interface
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          interface!
+        INPUT
+                    
+        OUTPUT
+      end
+
+      def test_interface_parens
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          interface!()
+        INPUT
+                      
+        OUTPUT
+      end
+
+      def test_mixes_in_class_methods
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          mixes_in_class_methods Foo
+        INPUT
+                                    
+        OUTPUT
+      end
+
+      def test_mixes_in_class_methods_parens
+        assert_erases(<<-INPUT, <<-OUTPUT)
+          mixes_in_class_methods(Foo)
+        INPUT
+                                     
+        OUTPUT
+      end
+
       def test_t_struct
         assert_erases(<<-INPUT, <<-OUTPUT)
           class Foo < T::Struct

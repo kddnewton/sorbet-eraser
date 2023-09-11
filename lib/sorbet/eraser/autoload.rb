@@ -16,8 +16,7 @@ else
   # Otherwise if the method isn't defined by bootsnap, then we'll define it
   # ourselves.
   def (RubyVM::InstructionSequence).load_iseq(filepath)
-    contents = File.read(filepath)
-    erased = Sorbet::Eraser.erase(contents)
+    erased = Sorbet::Eraser.erase_filepath(filepath)
     RubyVM::InstructionSequence.compile(erased, filepath, filepath)
   end
 end

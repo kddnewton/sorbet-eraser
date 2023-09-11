@@ -52,15 +52,13 @@ module Sorbet
       private
 
       def process(filepath)
-        contents = Eraser.erase(File.read(filepath))
+        contents = Eraser.erase_file(filepath)
 
         if verify && Ripper.sexp_raw(contents).nil?
           warn("Internal error while parsing #{filepath}")
         else
           File.write(filepath, contents)
         end
-      rescue Parser::ParsingError => error
-        warn("Could not parse #{filepath}: #{error}")
       rescue => error
         warn("Could not parse #{filepath}: #{error}")
       end
