@@ -7,7 +7,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    minitest (5.22.0)
+    minitest (5.22.1)
     rake (13.1.0)
     yarp (0.13.0)
 
