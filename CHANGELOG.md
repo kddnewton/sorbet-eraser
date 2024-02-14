@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased]
 
+## [0.7.0] - 2024-02-14
+
+### Added
+
+- Use `prism` as the parser, not `yarp`.
+
+### Changed
+
+- Fix the return value of `T::Private:Methods.signature_for_method`.
+- `T::Props#props` is expected to be a hash not an array.
+
 ## [0.6.0] - 2023-09-11
 
 ### Added
