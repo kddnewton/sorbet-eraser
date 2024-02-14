@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "yarp"
+require "prism"
 
 require "sorbet/eraser/version"
 require "sorbet/eraser/t"
@@ -23,7 +23,7 @@ module Sorbet
   module Eraser
     # This class is a YARP visitor that finds the ranges of bytes that should be
     # erased from the source code.
-    class Ranges < YARP::Visitor
+    class Ranges < Prism::Visitor
       attr_reader :ranges
 
       def initialize(ranges)
@@ -32,7 +32,7 @@ module Sorbet
 
       def visit_call_node(node)
         case node.name
-        when "abstract!", "final!", "interface!"
+        when :abstract!, :final!, :interface!
           # abstract!
           # abstract!()
           # final!
@@ -42,7 +42,7 @@ module Sorbet
           if !node.receiver && !node.arguments && !node.block
             ranges << (node.location.start_offset...node.location.end_offset)
           end
-        when "assert_type!", "bind", "cast", "let"
+        when :assert_type!, :bind, :cast, :let
           # T.assert_type! foo, String
           # T.assert_type!(foo, String)
           # T.bind self, String
@@ -51,9 +51,7 @@ module Sorbet
           # T.cast(foo, String)
           # T.let foo, String
           # T.let(foo, String)
-          if node.receiver.is_a?(YARP::ConstantReadNode) && node.receiver.name == :T && node.arguments && !node.block && node.arguments.arguments.length == 2
-            arguments = node.arguments.arguments
-
+          if node.receiver.is_a?(Prism::ConstantReadNode) && node.receiver.name == :T && (arguments = node.arguments&.arguments) && !node.block && arguments.length == 2
             if node.opening_loc
               ranges << (node.location.start_offset...node.opening_loc.start_offset)
               ranges << (arguments.first.location.end_offset...node.closing_loc.start_offset)
@@ -62,7 +60,7 @@ module Sorbet
               ranges << (arguments.last.location.end_offset...node.location.end_offset)
             end
           end
-        when "const", "prop"
+        when :const, :prop
           # const :foo, String
           # const :foo, String, required: true
           # const(:foo, String)
@@ -71,8 +69,8 @@ module Sorbet
           # prop :foo, String, required: true
           # prop(:foo, String)
           # prop(:foo, String, required: true)
-          if !node.receiver && node.arguments && !node.block
-            arguments = node.arguments.arguments
+          if !node.receiver && (arguments = node.arguments) && !node.block
+            arguments = arguments.arguments
 
             case arguments.length
             when 2
@@ -81,21 +79,21 @@ module Sorbet
               ranges << (arguments[1].location.start_offset...arguments[2].location.start_offset)
             end
           end
-        when "mixes_in_class_methods"
+        when :mixes_in_class_methods
           # mixes_in_class_methods Foo
           # mixes_in_class_methods(Foo)
-          if !node.receiver && node.arguments && !node.block && node.arguments.arguments.length == 1
+          if !node.receiver && (arguments = node.arguments&.arguments) && !node.block && arguments.length == 1
             ranges << (node.location.start_offset...node.location.end_offset)
           end
-        when "must", "reveal_type", "unsafe"
+        when :must, :reveal_type, :unsafe
           # T.must foo
           # T.must(foo)
           # T.reveal_type foo
           # T.reveal_type(foo)
           # T.unsafe foo
           # T.unsafe(foo)
-          if node.receiver.is_a?(YARP::ConstantReadNode) && node.receiver.name == :T && node.arguments && !node.block && node.arguments.arguments.length == 1
-            argument = node.arguments.arguments.first
+          if (receiver = node.receiver).is_a?(Prism::ConstantReadNode) && receiver.name == :T && (arguments = node.arguments&.arguments) && !node.block && arguments.length == 1
+            argument = arguments.first
 
             if node.opening_loc
               ranges << (node.location.start_offset...node.opening_loc.start_offset)
@@ -105,7 +103,7 @@ module Sorbet
               ranges << (argument.location.end_offset...node.location.end_offset)
             end
           end
-        when "sig"
+        when :sig
           # sig { ... }
           # sig do ... end
           if !node.receiver && !node.arguments && node.block
@@ -122,14 +120,14 @@ module Sorbet
       # with a string that contains Ruby source. It returns the modified Ruby
       # source.
       def erase(source)
-        erase_result(YARP.parse(source), source)
+        erase_result(Prism.parse(source), source)
       end
 
       # This is one of the two entrypoints to the module. This should be called
       # with a filepath that points to a file that contains Ruby source. It
       # returns the modified Ruby source.
       def erase_file(filepath)
-        erase_result(YARP.parse_file(filepath), File.read(filepath))
+        erase_result(Prism.parse_file(filepath), File.read(filepath))
       end
 
       private
@@ -144,7 +142,7 @@ module Sorbet
           # Implicitly assuming that comments are in order.
           break if comment.location.start_line >= minimum
 
-          if comment.type == :inline && comment.location.slice.match?(/\A#\s*typed:\s*(?:ignore|false|true|strict|strong)\s*\z/)
+          if comment.is_a?(Prism::InlineComment) && comment.location.slice.match?(/\A#\s*typed:\s*(?:ignore|false|true|strict|strong)\s*\z/)
             ranges << ((comment.location.start_offset + 1)...comment.location.end_offset)
           end
         end
