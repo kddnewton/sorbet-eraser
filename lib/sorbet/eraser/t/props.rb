@@ -16,7 +16,7 @@ module T
     # them and not raise errors and for bookkeeping.
     module ClassMethods
       def props
-        @props ||= []
+        @props ||= {}
       end
 
       def prop(name, rules = {})
@@ -32,8 +32,7 @@ module T
       private
 
       def create_prop(name, rules)
-        props << [name, rules]
-        props.sort_by!(&:first)
+        props[name] = rules
       end
     end
 
