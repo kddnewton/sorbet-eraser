@@ -47,7 +47,7 @@ module T
       module SingletonMethodHooks
       end
 
-      def self.signature_for_method(method); method; end
+      def self.signature_for_method(method); nil; end
     end
   end
 
