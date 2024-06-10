@@ -8,7 +8,7 @@ GEM
   remote: https://rubygems.org/
   specs:
     minitest (5.23.1)
-    prism (0.29.0)
+    prism (0.30.0)
     rake (13.2.1)
 
 PLATFORMS
