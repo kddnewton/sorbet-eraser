@@ -9,7 +9,7 @@ GEM
   specs:
     minitest (5.26.0)
     prism (1.6.0)
-    rake (13.3.0)
+    rake (13.3.1)
 
 PLATFORMS
   arm64-darwin-21
