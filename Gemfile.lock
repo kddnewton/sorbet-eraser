@@ -7,7 +7,7 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    minitest (5.26.1)
+    minitest (5.26.2)
     prism (1.6.0)
     rake (13.3.1)
 
