@@ -9,7 +9,7 @@ GEM
   specs:
     minitest (6.0.0)
       prism (~> 1.5)
-    prism (1.6.0)
+    prism (1.7.0)
     rake (13.3.1)
 
 PLATFORMS
